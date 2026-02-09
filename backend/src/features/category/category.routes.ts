@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { categoryController } from './category.controller.js';
 import { AuthRequest } from '../../shared/middleware/auth.middleware.js';
+import { can } from '../../shared/middleware/rbac.middleware.js';
 
 const router = Router();
 
@@ -41,7 +42,7 @@ const router = Router();
  *         description: Category created successfully
  */
 // Business-scoped routes
-router.post('/business/:businessId/categories', (req: Request, res: Response) => 
+router.post('/business/:businessId/categories', can('create', 'category'), (req: Request, res: Response) => 
   categoryController.create(req as unknown as AuthRequest, res)
 );
 
@@ -63,7 +64,7 @@ router.post('/business/:businessId/categories', (req: Request, res: Response) =>
  *       200:
  *         description: List of categories
  */
-router.get('/business/:businessId/categories', (req: Request, res: Response) => 
+router.get('/business/:businessId/categories', can('read', 'category'), (req: Request, res: Response) => 
   categoryController.getAll(req as unknown as AuthRequest, res)
 );
 
@@ -94,9 +95,12 @@ router.get('/business/:businessId/categories', (req: Request, res: Response) =>
  *     responses:
  *       200:
  *         description: Categories reordered successfully
+ *     responses:
+ *       200:
+ *         description: Categories reordered successfully
  */
 // Category-specific routes
-router.put('/categories/reorder', (req: Request, res: Response) => 
+router.put('/categories/reorder', can('update', 'category'), (req: Request, res: Response) => 
   categoryController.reorder(req as unknown as AuthRequest, res)
 );
 
@@ -127,7 +131,7 @@ router.put('/categories/reorder', (req: Request, res: Response) =>
  *       200:
  *         description: Category updated successfully
  */
-router.put('/categories/:id', (req: Request, res: Response) => 
+router.put('/categories/:id', can('update', 'category'), (req: Request, res: Response) => 
   categoryController.update(req as unknown as AuthRequest, res)
 );
 
@@ -149,7 +153,7 @@ router.put('/categories/:id', (req: Request, res: Response) =>
  *       200:
  *         description: Category deleted successfully
  */
-router.delete('/categories/:id', (req: Request, res: Response) => 
+router.delete('/categories/:id', can('delete', 'category'), (req: Request, res: Response) => 
   categoryController.delete(req as unknown as AuthRequest, res)
 );
 

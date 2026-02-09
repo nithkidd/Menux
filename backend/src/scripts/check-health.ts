@@ -7,7 +7,7 @@ async function checkHealth() {
     console.log('Checking health...');
     const res = await axios.get(`${API_URL}/health`);
     console.log('Health Check Status:', res.status, res.data);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Health Check Failed:', error.message);
   }
 }

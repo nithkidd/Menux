@@ -22,11 +22,21 @@ export class CategoryRepository {
   async findByBusinessId(businessId: string): Promise<Category[]> {
     const { data, error } = await supabaseAdmin
       .from(this.table)
-      .select('*')
+      .select('*, items(*)')
       .eq('business_id', businessId)
       .order('sort_order', { ascending: true });
 
     if (error) throw new Error(error.message);
+    
+    // Sort items by sort_order within each category
+    if (data) {
+        data.forEach((category: any) => {
+            if (category.items) {
+                category.items.sort((a: any, b: any) => a.sort_order - b.sort_order);
+            }
+        });
+    }
+
     return data || [];
   }
 

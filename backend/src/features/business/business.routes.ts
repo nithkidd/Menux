@@ -57,7 +57,7 @@ router.post('/', can('create', 'business'), (req: Request, res: Response) =>
  *       200:
  *         description: List of businesses
  */
-router.get('/', (req: Request, res: Response) => 
+router.get('/', can('read', 'business'), (req: Request, res: Response) => 
   businessController.getAll(req as unknown as AuthRequest, res)
 );
 

@@ -31,15 +31,14 @@ export type Permission = Action | `${Action}:own`;
 // Permission matrix: role -> resource -> allowed permissions
 export const PERMISSIONS: Record<Role, Partial<Record<Resource, Permission[]>>> = {
   user: {
-    business:   ['create', 'read:own', 'update:own', 'delete:own'],
-    category:   ['create', 'read:own', 'update:own', 'delete:own'],
-    item:       ['create', 'read:own', 'update:own', 'delete:own'],
+    // User is just a viewer of public menus or their own profile
     profile:    ['read:own', 'update:own'],
   },
   admin: {
-    business:        ['create', 'read', 'update', 'delete'],
-    category:        ['create', 'read', 'update', 'delete'],
-    item:            ['create', 'read', 'update', 'delete'],
+    // Admin is a Business Owner - can only manage their own resources
+    business:        ['create', 'read:own', 'update:own', 'delete:own'],
+    category:        ['create:own', 'read:own', 'update:own', 'delete:own'],
+    item:            ['create:own', 'read:own', 'update:own', 'delete:own'],
     profile:         ['read', 'update'],
     user:            ['read'],
     admin_dashboard: ['read'],

@@ -8,6 +8,7 @@ import { itemRoutes } from "../features/item/index.js";
 import { menuRoutes } from "../features/menu/index.js";
 import { uploadRoutes } from "../features/upload/index.js";
 import { adminRoutes } from "../features/admin/index.js";
+import { foodTypeRoutes } from "../features/food-type/food-type.routes.js";
 import authRoutes from "../features/auth/auth.routes.js";
 
 const router = Router();
@@ -29,5 +30,6 @@ router.use("/business", verifyAuth, businessRoutes);
 router.use(verifyAuth, categoryRoutes); // Has /business/:id/categories and /categories/:id
 router.use(verifyAuth, itemRoutes); // Has /categories/:id/items and /items/:id
 router.use("/upload", verifyAuth, uploadRoutes);
+router.use("/business/:businessId/food-types", verifyAuth, foodTypeRoutes);
 
 export default router;

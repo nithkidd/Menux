@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { businessService } from '../services/business.service';
+import PageTransition from '../../../shared/components/PageTransition';
 
 export default function CreateBusiness() {
   const navigate = useNavigate();
@@ -30,85 +31,92 @@ export default function CreateBusiness() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-          Create a new Business
-        </h2>
-      </div>
+    <PageTransition>
+      <div className="flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-stone-900 dark:text-white">
+            Create a new Business
+            </h2>
+            <p className="mt-2 text-center text-sm text-stone-600 dark:text-stone-400">
+                Start managing your digital menu in seconds.
+            </p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Business Name
-              </label>
-              <div className="mt-1">
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                />
-              </div>
-            </div>
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="bg-white dark:bg-stone-900 py-8 px-4 shadow-sm sm:rounded-3xl sm:px-10 border border-stone-200 dark:border-stone-800">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+                <div>
+                <label htmlFor="name" className="block text-sm font-medium text-stone-700 dark:text-stone-300">
+                    Business Name
+                </label>
+                <div className="mt-1">
+                    <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="block w-full appearance-none rounded-xl border border-stone-300 dark:border-stone-700 dark:bg-stone-950 dark:text-white px-3 py-2 placeholder-stone-400 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500 sm:text-sm"
+                    placeholder="e.g. The Burger Joint"
+                    />
+                </div>
+                </div>
 
-            <div>
-              <label htmlFor="type" className="block text-sm font-medium text-gray-700">
-                Business Type
-              </label>
-              <div className="mt-1">
-                <select
-                  id="type"
-                  name="type"
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                <div>
+                <label htmlFor="type" className="block text-sm font-medium text-stone-700 dark:text-stone-300">
+                    Business Type
+                </label>
+                <div className="mt-1">
+                    <select
+                    id="type"
+                    name="type"
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                    className="block w-full rounded-xl border-stone-300 dark:border-stone-700 dark:bg-stone-950 dark:text-white py-2 pl-3 pr-10 text-base focus:border-orange-500 focus:outline-none focus:ring-orange-500 sm:text-sm"
+                    >
+                    <option value="restaurant">Restaurant</option>
+                    <option value="gaming_gear">Gaming Gear</option>
+                    </select>
+                </div>
+                </div>
+
+                <div>
+                <label htmlFor="description" className="block text-sm font-medium text-stone-700 dark:text-stone-300">
+                    Description
+                </label>
+                <div className="mt-1">
+                    <textarea
+                    id="description"
+                    name="description"
+                    rows={3}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="block w-full rounded-xl border-stone-300 dark:border-stone-700 dark:bg-stone-950 dark:text-white shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm px-3 py-2"
+                    placeholder="A short description of your business..."
+                    />
+                </div>
+                </div>
+
+                {error && <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/10 p-2 rounded-lg text-center">{error}</div>}
+
+                <div>
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex w-full justify-center rounded-2xl border border-transparent bg-stone-900 dark:bg-orange-600 py-2.5 px-4 text-sm font-bold text-white shadow-sm hover:bg-stone-800 dark:hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all disabled:opacity-70 btn-press"
                 >
-                  <option value="restaurant">Restaurant</option>
-                  <option value="gaming_gear">Gaming Gear</option>
-                </select>
-              </div>
+                    {loading ? 'Creating...' : 'Create Business'}
+                </button>
+                </div>
+                
+                <div className="text-center">
+                    <button type="button" onClick={() => navigate('/dashboard')} className="text-stone-500 text-sm hover:text-orange-600 transition-colors btn-press">Cancel</button>
+                </div>
+            </form>
             </div>
-
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                Description
-              </label>
-              <div className="mt-1">
-                <textarea
-                  id="description"
-                  name="description"
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2"
-                />
-              </div>
-            </div>
-
-            {error && <div className="text-red-500 text-sm">{error}</div>}
-
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-              >
-                {loading ? 'Creating...' : 'Create Business'}
-              </button>
-            </div>
-            
-            <div className="text-center">
-                <button type="button" onClick={() => navigate('/dashboard')} className="text-indigo-600 text-sm hover:underline">Cancel</button>
-            </div>
-          </form>
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }

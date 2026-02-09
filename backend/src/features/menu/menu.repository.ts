@@ -8,13 +8,23 @@ interface PublicBusiness {
   logo_url: string | null;
   description: string | null;
   business_type: string;
+  // Settings
+  contact_email: string | null;
+  contact_phone: string | null;
+  address: string | null;
+  website_url: string | null;
+  social_links: any;
+  opening_hours: any;
+  primary_color: string | null;
+  cover_image_url: string | null;
+  currency: string;
 }
 
 export class MenuRepository {
   async getBusinessBySlug(slug: string): Promise<PublicBusiness | null> {
     const { data, error } = await supabaseAdmin
       .from('businesses')
-      .select('id, name, slug, logo_url, description, business_type')
+      .select('id, name, slug, logo_url, description, business_type, contact_email, contact_phone, address, website_url, social_links, opening_hours, primary_color, cover_image_url, currency')
       .eq('slug', slug)
       .eq('is_active', true)
       .single();

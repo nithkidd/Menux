@@ -1,11 +1,13 @@
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../auth/auth.context';
+
 import { businessService, type Business } from '../services/business.service';
 import { Link } from 'react-router-dom';
+import { Settings } from 'lucide-react';
+import PageTransition from '../../../shared/components/PageTransition';
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
+  // const { user, signOut } = useAuth(); // Not needed as Navbar handles it
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,77 +29,93 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 justify-between">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">MenuBuilder</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700 hidden sm:block">{user?.email}</span>
-              <button
-                onClick={signOut}
-                className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-              >
-                Sign out
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="py-10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          
-          <div className="md:flex md:items-center md:justify-between mb-8">
+    <PageTransition>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="md:flex md:items-center md:justify-between mb-8">
+            {/* ... content ... */}
             <div className="min-w-0 flex-1">
-              <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+                <h2 className="text-3xl font-bold leading-7 text-stone-900 dark:text-white sm:truncate tracking-tight">
                 Your Businesses
-              </h2>
+                </h2>
+                <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Manage your restaurant menus and settings.</p>
             </div>
-            {/* TODO: Add Create Business Button */}
             <div className="mt-4 flex md:ml-4 md:mt-0">
-               <Link
-                 to="/dashboard/create-business"
-                 className="ml-3 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-               >
-                 Create Business
-               </Link>
+                <Link
+                    to="/dashboard/create-business"
+                    className="inline-flex items-center rounded-2xl bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-orange-700 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 btn-press"
+                >
+                    Create Business
+                </Link>
             </div>
-          </div>
-
-          {loading ? (
-             <div className="text-center py-12">Loading...</div>
-          ) : error ? (
-             <div className="text-center py-12 text-red-600">{error}</div>
-          ) : businesses.length === 0 ? (
-             <div className="text-center py-12 bg-white rounded-lg shadow">
-               <h3 className="mt-2 text-sm font-semibold text-gray-900">No businesses</h3>
-               <p className="mt-1 text-sm text-gray-500">Get started by creating a new business.</p>
-               {/* 
-                  Since we don't have the Create UI yet, 
-                  user can use the verify script to create one or we add a simple button here.
-               */}
-             </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {businesses.map((biz) => (
-                <div key={biz.id} className="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400">
-                  <div className="min-w-0 flex-1">
-                    <Link to={`/dashboard/business/${biz.id}`} className="focus:outline-none">
-                      <span className="absolute inset-0" aria-hidden="true" />
-                      <p className="text-sm font-medium text-gray-900">{biz.name}</p>
-                      <p className="truncate text-sm text-gray-500">{biz.business_type} • /{biz.slug}</p>
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
         </div>
-      </main>
-    </div>
+
+        {loading ? (
+                <div className="text-center py-24">
+                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-orange-600 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
+                        <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]" >Loading...</span>
+                    </div>
+                </div>
+        ) : error ? (
+                <div className="text-center py-12 text-red-600 bg-red-50 dark:bg-red-900/10 rounded-2xl">{error}</div>
+        ) : businesses.length === 0 ? (
+                <div className="text-center py-24 bg-white dark:bg-stone-900 rounded-3xl shadow-sm border border-stone-200 dark:border-stone-800">
+                    <div className="mx-auto h-12 w-12 text-stone-400">
+                        <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                    </div>
+                    <h3 className="mt-2 text-sm font-semibold text-stone-900 dark:text-white">No businesses</h3>
+                    <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Get started by creating a new business.</p>
+                    <div className="mt-6">
+                        <Link
+                            to="/dashboard/create-business"
+                            className="inline-flex items-center rounded-2xl bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-orange-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 btn-press"
+                        >
+                            Create Business
+                        </Link>
+                    </div>
+                </div>
+        ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {businesses.map((biz) => (
+                <div 
+                    key={biz.id} 
+                    className="group relative flex flex-col justify-between space-y-4 rounded-3xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-6 shadow-sm hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900 transition-all duration-300"
+                >
+                    <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                            <h3 className="text-lg font-bold text-stone-900 dark:text-white group-hover:text-orange-600 transition-colors">
+                                <Link to={`/dashboard/business/${biz.id}`}>
+                                    {biz.name}
+                                </Link>
+                            </h3>
+                            <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">{biz.business_type}</p>
+                        </div>
+                        {biz.logo_url && (
+                            <img src={biz.logo_url} alt={biz.name} className="h-12 w-12 rounded-xl object-cover bg-stone-100 dark:bg-stone-800" />
+                        )}
+                    </div>
+                    <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex justify-between items-center">
+                        <Link 
+                            to={`/dashboard/business/${biz.id}`}
+                            className="inline-flex items-center text-sm font-bold text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400 transition-colors"
+                        >
+                            Edit Menu
+                        </Link>
+                        
+                        <Link 
+                            to={`/dashboard/business/${biz.id}/settings`}
+                            className="inline-flex items-center text-sm font-medium text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors gap-1"
+                        >
+                            <Settings size={16} />
+                            Settings
+                        </Link>
+                    </div>
+                </div>
+                ))}
+            </div>
+        )}
+      </div>
+    </PageTransition>
   );
 }

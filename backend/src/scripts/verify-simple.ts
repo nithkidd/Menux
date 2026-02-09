@@ -57,7 +57,7 @@ async function verifyAuthAndBusiness() {
     console.log('   Business Created:', res.data.data.slug);
     console.log('✅ Auth & Business Flow Verified');
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Failed:', error.message || error);
     if (axios.isAxiosError(error)) {
         console.error('   API Response:', error.response?.data);

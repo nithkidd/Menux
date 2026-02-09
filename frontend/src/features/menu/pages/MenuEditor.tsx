@@ -1,21 +1,50 @@
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { menuService, type Category } from '../services/menu.service';
+import { menuService, type Category, type Item } from '../services/menu.service';
+import { foodTypeService } from '../services/food-type.service';
 import { businessService, type Business } from '../../business/services/business.service';
-import { Plus, Trash2, ExternalLink } from 'lucide-react'; 
+import { Plus, ExternalLink, PlayCircle } from 'lucide-react'; 
+import PageTransition from '../../../shared/components/PageTransition'; 
+import ItemModal from '../components/ItemModal';
+import CategoryModal from '../components/CategoryModal';
+
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors, 
+  type DragEndEvent 
+} from '@dnd-kit/core';
+import { 
+  arrayMove, 
+  SortableContext, 
+  sortableKeyboardCoordinates, 
+  verticalListSortingStrategy 
+} from '@dnd-kit/sortable';
+import { SortableCategory } from '../components/SortableCategory';
 
 export default function MenuEditor() {
   const { businessId } = useParams<{ businessId: string }>();
   const [business, setBusiness] = useState<Business | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newCatName, setNewCatName] = useState('');
   
-  // Simple state to track which category is adding an item
-  const [addingItemTo, setAddingItemTo] = useState<string | null>(null);
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemPrice, setNewItemPrice] = useState('');
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [targetCategoryId, setTargetCategoryId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     if (businessId) {
@@ -47,15 +76,100 @@ export default function MenuEditor() {
     }
   };
 
-  const handleAddCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!businessId || !newCatName.trim()) return;
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    // Check if dragging a category
+    const activeCategoryIndex = categories.findIndex(cat => cat.id === active.id);
+    const overCategoryIndex = categories.findIndex(cat => cat.id === over.id);
+
+    if (activeCategoryIndex !== -1 && overCategoryIndex !== -1) {
+        // Reordering categories
+        const newCategories = arrayMove(categories, activeCategoryIndex, overCategoryIndex);
+        setCategories(newCategories); // Optimistic update
+        
+        // Prepare API payload
+        const reorderPayload = newCategories.map((cat, index) => ({
+            id: cat.id,
+            sort_order: index
+        }));
+
+        try {
+            await menuService.reorderCategories(reorderPayload);
+        } catch (error) {
+            console.error("Failed to reorder categories", error);
+            loadMenu(); // Revert on error
+        }
+        return;
+    }
+
+    // Check if dragging an item
+    // Find source category and item
+    let sourceCategory: Category | undefined;
+    let sourceItem: Item | undefined;
+
+    for (const cat of categories) {
+        const item = cat.items?.find(i => i.id === active.id);
+        if (item) {
+            sourceCategory = cat;
+            sourceItem = item;
+            break;
+        }
+    }
+
+    if (sourceCategory && sourceItem) {
+        // Find target item (over)
+        // Since we only support reordering WITHIN a category for now (simplification), 
+        // verify over is in the same category
+        const isOverInSameCategory = sourceCategory.items.some(i => i.id === over.id);
+
+        if (isOverInSameCategory) {
+            const oldIndex = sourceCategory.items.findIndex(i => i.id === active.id);
+            const newIndex = sourceCategory.items.findIndex(i => i.id === over.id);
+
+            const newItems = arrayMove(sourceCategory.items, oldIndex, newIndex);
+            
+            // Update local state
+            const newCategories = categories.map(cat => {
+                if (cat.id === sourceCategory!.id) {
+                    return { ...cat, items: newItems };
+                }
+                return cat;
+            });
+            setCategories(newCategories);
+
+             // Prepare API payload
+             const reorderPayload = newItems.map((item, index) => ({
+                id: item.id,
+                sort_order: index
+            }));
+
+            try {
+                await menuService.reorderItems(sourceCategory.id, reorderPayload);
+            } catch (error) {
+                console.error("Failed to reorder items", error);
+                loadMenu(); // Revert
+            }
+        }
+    }
+  };
+
+  const handleSaveCategory = async (name: string) => {
+    if (!businessId) return;
     try {
-      await menuService.createCategory(businessId, newCatName);
-      setNewCatName('');
+      if (editingCategory) {
+        await menuService.updateCategory(editingCategory.id, name);
+      } else {
+        await menuService.createCategory(businessId, name);
+      }
+      setIsCategoryModalOpen(false);
       loadMenu();
     } catch (error) {
-      alert('Failed to create category');
+      alert('Failed to save category');
     }
   };
 
@@ -69,20 +183,43 @@ export default function MenuEditor() {
     }
   };
 
-  const handleAddItem = async (e: React.FormEvent, categoryId: string) => {
-    e.preventDefault();
-    if (!newItemName.trim() || !newItemPrice) return;
+  // Open modal for Create Item
+  const openCreateModal = (categoryId: string) => {
+    setEditingItem(null); // Create mode
+    setTargetCategoryId(categoryId);
+    setIsModalOpen(true);
+  };
+
+  // Open modal for Edit Item
+  const openEditModal = (item: Item) => {
+    setEditingItem(item); // Edit mode
+    setTargetCategoryId(item.category_id);
+    setIsModalOpen(true);
+  };
+
+  // Handle Save from Item Modal
+  const handleSaveItem = async (formData: Partial<Item>, foodTypeIds: string[]) => {
     try {
-      await menuService.createItem(categoryId, {
-        name: newItemName,
-        price: parseFloat(newItemPrice)
-      });
-      setAddingItemTo(null);
-      setNewItemName('');
-      setNewItemPrice('');
-      loadMenu();
+        let savedItem: Item;
+        if (editingItem) {
+            // Update
+            savedItem = await menuService.updateItem(editingItem.id, formData);
+        } else {
+            // Create
+            if (!formData.category_id) return;
+            savedItem = await menuService.createItem(formData.category_id, formData);
+        }
+
+        // Save tags
+        if (foodTypeIds) {
+            await foodTypeService.setItemTags(savedItem.id, foodTypeIds);
+        }
+
+        setIsModalOpen(false);
+        loadMenu();
     } catch (error) {
-      alert('Failed to create item');
+        console.error("Failed to save item", error);
+        alert('Failed to save item');
     }
   };
 
@@ -99,22 +236,23 @@ export default function MenuEditor() {
   if (loading) return <div className="p-8 text-center bg-gray-50 min-h-screen">Loading menu...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-20">
-      <div className="bg-white shadow">
+    <PageTransition className="pb-20">
+      <div className="bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
             <div className="flex items-center space-x-4">
-                <Link to="/dashboard" className="text-gray-500 hover:text-gray-900">← Back</Link>
-                <h1 className="text-2xl font-bold text-gray-900">Menu Editor: {business?.name}</h1>
+                <Link to="/dashboard" className="text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors btn-press">← Back</Link>
+                <h1 className="text-2xl font-bold text-stone-900 dark:text-white tracking-tight">Menu Editor: {business?.name}</h1>
             </div>
             {business && (
               <a 
                 href={`/menu/${business.slug}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-indigo-600 hover:text-indigo-900 flex items-center space-x-1"
+                className="inline-flex items-center px-4 py-2 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-bold rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-stone-700 shadow-sm btn-press"
               >
-                  <span>View Public Menu</span>
-                  <ExternalLink size={16} />
+                  <PlayCircle size={18} className="mr-2 text-orange-600 dark:text-orange-500" />
+                  <span>Live Preview</span>
+                  <ExternalLink size={14} className="ml-2 text-stone-400" />
               </a>
             )}
         </div>
@@ -122,110 +260,77 @@ export default function MenuEditor() {
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Add Category Form */}
-        <div className="bg-white p-4 rounded-lg shadow mb-8">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Add Category</h3>
-            <form onSubmit={handleAddCategory} className="flex gap-2">
-                <input
-                    type="text"
-                    placeholder="Category Name (e.g. Starters)"
-                    className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
-                    value={newCatName}
-                    onChange={e => setNewCatName(e.target.value)}
-                />
-                <button
-                    type="submit"
-                    className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                    <Plus size={16} className="mr-1"/> Add
-                </button>
-            </form>
+        {/* Actions Bar */}
+        <div className="flex justify-end mb-8">
+            <button
+                onClick={() => {
+                    setEditingCategory(null);
+                    setIsCategoryModalOpen(true);
+                }}
+                className="inline-flex items-center rounded-xl border border-transparent bg-stone-900 dark:bg-orange-600 px-6 py-3 text-base font-bold text-white shadow-lg hover:bg-stone-800 dark:hover:bg-orange-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all btn-press"
+            >
+                <Plus size={20} className="mr-2"/> Add Category
+            </button>
         </div>
 
-        {/* Categories List */}
-        <div className="space-y-6">
-            {categories.map(category => (
-                <div key={category.id} className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                        <h3 className="text-lg font-medium text-gray-900">{category.name}</h3>
-                        <button onClick={() => handleDeleteCategory(category.id)} className="text-gray-400 hover:text-red-500">
-                            <Trash2 size={18} />
-                        </button>
-                    </div>
-                    
-                    <div className="p-4 space-y-3">
-                        {category.items?.map(item => (
-                            <div key={item.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                                <div>
-                                    <div className="font-medium text-gray-900">{item.name}</div>
-                                    <div className="text-sm text-gray-500">${item.price.toFixed(2)}</div>
-                                </div>
-                                <button onClick={() => handleDeleteItem(item.id)} className="text-gray-400 hover:text-red-500">
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
-                        ))}
-                        
-                        {addingItemTo === category.id ? (
-                            <form onSubmit={(e) => handleAddItem(e, category.id)} className="mt-3 p-3 bg-gray-50 rounded border border-indigo-100">
-                                <div className="grid grid-cols-2 gap-2 mb-2">
-                                    <input 
-                                        type="text" 
-                                        placeholder="Item Name" 
-                                        className="rounded border-gray-300 px-2 py-1 text-sm w-full"
-                                        value={newItemName}
-                                        onChange={e => setNewItemName(e.target.value)}
-                                        autoFocus
-                                    />
-                                    <input 
-                                        type="number" 
-                                        placeholder="Price" 
-                                        step="0.01"
-                                        className="rounded border-gray-300 px-2 py-1 text-sm w-full"
-                                        value={newItemPrice}
-                                        onChange={e => setNewItemPrice(e.target.value)}
-                                    />
-                                </div>
-                                <div className="flex justify-end space-x-2">
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setAddingItemTo(null)}
-                                        className="text-xs text-gray-500 hover:text-gray-700"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button 
-                                        type="submit"
-                                        className="text-xs bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
-                                    >
-                                        Save Item
-                                    </button>
-                                </div>
-                            </form>
-                        ) : (
-                            <button 
-                                onClick={() => {
-                                    setAddingItemTo(category.id);
-                                    setNewItemName('');
-                                    setNewItemPrice('');
-                                }}
-                                className="mt-2 w-full flex items-center justify-center p-2 border-2 border-dashed border-gray-300 rounded-md text-gray-500 hover:border-indigo-500 hover:text-indigo-500 text-sm"
-                            >
-                                <Plus size={16} className="mr-1" /> Add Item
-                            </button>
-                        )}
-                    </div>
+        {/* Draggable Categories List */}
+        <DndContext 
+            sensors={sensors} 
+            collisionDetection={closestCenter} 
+            onDragEnd={handleDragEnd}
+        >
+            <SortableContext 
+                items={categories.map(cat => cat.id)} 
+                strategy={verticalListSortingStrategy}
+            >
+                <div className="space-y-6">
+                    {categories.map(category => (
+                        <SortableCategory
+                            key={category.id}
+                            category={category}
+                            items={category.items || []}
+                            onDeleteCategory={handleDeleteCategory}
+                            onEditItem={openEditModal}
+                            onDeleteItem={handleDeleteItem}
+                            onAddItem={openCreateModal}
+                            onEditCategory={(cat) => {
+                                setEditingCategory(cat);
+                                setIsCategoryModalOpen(true);
+                            }}
+                        />
+                    ))}
                 </div>
-            ))}
+            </SortableContext>
+        </DndContext>
             
-            {categories.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                    No categories yet. Add one above.
-                </div>
-            )}
-        </div>
+        {categories.length === 0 && (
+            <div className="text-center py-12 text-stone-500 dark:text-stone-400 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 border-dashed">
+                No categories yet. Click "Add Category" to get started.
+            </div>
+        )}
+
+        {/* Modal */}
+        {businessId && (
+            <ItemModal 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveItem}
+                initialData={editingItem}
+                categories={categories}
+                initialCategoryId={targetCategoryId}
+                businessId={businessId}
+            />
+        )}
+
+        {/* Category Modal */}
+        <CategoryModal
+            isOpen={isCategoryModalOpen}
+            onClose={() => setIsCategoryModalOpen(false)}
+            onSave={handleSaveCategory}
+            initialName={editingCategory?.name}
+        />
 
       </div>
-    </div>
+    </PageTransition>
   );
 }

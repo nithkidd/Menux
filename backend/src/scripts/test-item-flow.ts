@@ -55,7 +55,7 @@ async function testItemFlow() {
     const busRes = await axios.post(
       `${API_URL}/businesses`,
       {
-        name: `Biz ${username}`,
+        name: `Biz ${Date.now()}`,
         business_type: "restaurant",
         description: "Test Desc",
       },

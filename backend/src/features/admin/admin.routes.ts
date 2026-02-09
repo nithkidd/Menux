@@ -17,7 +17,7 @@ router.get("/stats", can("read", "admin_dashboard"), adminController.getStats);
 // ─── Business Management (admin+) ──────────────────────────────────
 router.get(
   "/businesses",
-  can("read", "business"),
+  requireRole("super_admin"),
   adminController.listBusinesses,
 );
 router.patch(

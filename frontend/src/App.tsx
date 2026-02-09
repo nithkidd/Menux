@@ -1,6 +1,7 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./features/auth/auth.context";
+import { ThemeProvider } from "./shared/contexts/ThemeContext";
 import { usePermissions } from "./shared/hooks/usePermissions";
 import AdminDashboard from "./features/admin/pages/AdminDashboard";
 import Login from "./features/auth/pages/Login";
@@ -8,6 +9,7 @@ import Dashboard from "./features/business/pages/Dashboard";
 import CreateBusiness from "./features/business/pages/CreateBusiness";
 import MenuEditor from "./features/menu/pages/MenuEditor";
 import PublicMenu from "./features/menu/pages/PublicMenu";
+import BusinessSettings from "./features/business/pages/BusinessSettings";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -26,26 +28,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-/**
- * Redirects logged-in users to the correct dashboard based on role.
- */
-function RoleBasedRedirect() {
-  const { user, loading } = useAuth();
-  const { isAdmin } = usePermissions();
 
-  if (loading)
-    return (
-      <div className="flex h-screen items-center justify-center">
-        Loading...
-      </div>
-    );
-
-  if (!user) return <Navigate to="/login" replace />;
-
-  if (isAdmin) return <Navigate to="/admin" replace />;
-
-  return <Navigate to="/dashboard" replace />;
-}
 
 /**
  * Admin-only route protection.
@@ -110,46 +93,73 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+import MainLayout from "./shared/components/MainLayout";
+
+const LandingPage = React.lazy(() => import("./features/landing/pages/LandingPage"));
+
 function AppRoutes() {
   return (
     <ErrorBoundary>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/create-business"
-          element={
-            <ProtectedRoute>
-              <CreateBusiness />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/business/:businessId"
-          element={
-            <ProtectedRoute>
-              <MenuEditor />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/menu/:slug" element={<PublicMenu />} />
-        <Route path="/" element={<RoleBasedRedirect />} />
-      </Routes>
+      <Suspense
+        fallback={
+          <div className="flex h-screen items-center justify-center">
+            Loading...
+          </div>
+        }
+      >
+        <Routes>
+          {/* Public Menu Route - No Layout */}
+          <Route path="/menu/:slug" element={<PublicMenu />} />
+
+          {/* Main App Layout */}
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route
+                path="/admin"
+                element={
+                <AdminRoute>
+                    <AdminDashboard />
+                </AdminRoute>
+                }
+            />
+            <Route
+                path="/dashboard"
+                element={
+                <ProtectedRoute>
+                    <Dashboard />
+                </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/dashboard/create-business"
+                element={
+                <ProtectedRoute>
+                    <CreateBusiness />
+                </ProtectedRoute>
+                }
+            />
+                <Route
+                    path="/dashboard/business/:businessId"
+                    element={
+                    <ProtectedRoute>
+                        <MenuEditor />
+                    </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/dashboard/business/:businessId/settings"
+                    element={
+                    <ProtectedRoute>
+                        <BusinessSettings />
+                    </ProtectedRoute>
+                    }
+                />
+          </Route>
+          
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </ErrorBoundary>
   );
 }
@@ -158,7 +168,9 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+          <AppRoutes />
+        </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
   );

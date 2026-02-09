@@ -10,6 +10,16 @@ export interface Business {
   description: string | null;
   is_active: boolean;
   created_at: string;
+  // New Settings Fields
+  contact_email?: string;
+  contact_phone?: string;
+  address?: string;
+  website_url?: string;
+  social_links?: Record<string, string>;
+  opening_hours?: Record<string, any>; // Simplified for now
+  primary_color?: string;
+  cover_image_url?: string | null;
+  currency?: string;
 }
 
 export const businessService = {
@@ -27,11 +37,9 @@ export const businessService = {
     const response = await api.get<{ success: boolean; data: Business }>(`/business/${id}`);
     return response.data.data;
   },
-  
-  getBySlug: async (slug: string) => {
-    // This might use the public endpoint if we are creating a preview
-    // accessing public endpoint /menu/:slug doesn't need auth
-    // But managing it needs auth.
-    // Let's implement getting business details by ID
+
+  update: async (id: string, data: Partial<Business>) => {
+    const response = await api.put<{ success: boolean; data: Business }>(`/business/${id}`, data);
+    return response.data.data;
   }
 };
