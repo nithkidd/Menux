@@ -7,7 +7,7 @@ const dirs = [
   'src/features/auth/pages',
   'src/features/auth/services',
   'src/features/auth/hooks',
-  'src/features/business/components',
+  'src/features/buchecsiness/components',
   'src/features/business/pages',
   'src/features/business/services',
   'src/features/menu/components',

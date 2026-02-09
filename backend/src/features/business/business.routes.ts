@@ -1,7 +1,7 @@
-import { Router, Request, Response } from 'express';
-import { businessController } from './business.controller.js';
-import { AuthRequest } from '../../shared/middleware/auth.middleware.js';
-import { can } from '../../shared/middleware/rbac.middleware.js';
+import { Router, Request, Response } from "express";
+import { businessController } from "./business.controller.js";
+import { AuthRequest } from "../../shared/middleware/auth.middleware.js";
+import { can } from "../../shared/middleware/rbac.middleware.js";
 
 const router = Router();
 
@@ -41,8 +41,8 @@ const router = Router();
  *       201:
  *         description: Business created successfully
  */
-router.post('/', can('create', 'business'), (req: Request, res: Response) => 
-  businessController.create(req as unknown as AuthRequest, res)
+router.post("/", can("create", "business"), (req: Request, res: Response) =>
+  businessController.create(req as unknown as AuthRequest, res),
 );
 
 /**
@@ -57,8 +57,8 @@ router.post('/', can('create', 'business'), (req: Request, res: Response) =>
  *       200:
  *         description: List of businesses
  */
-router.get('/', can('read', 'business'), (req: Request, res: Response) => 
-  businessController.getAll(req as unknown as AuthRequest, res)
+router.get("/", can("read", "business"), (req: Request, res: Response) =>
+  businessController.getAll(req as unknown as AuthRequest, res),
 );
 
 /**
@@ -81,14 +81,74 @@ router.get('/', can('read', 'business'), (req: Request, res: Response) =>
  *       404:
  *         description: Business not found
  */
-router.get('/:id', (req: Request, res: Response) => 
-  businessController.getById(req as unknown as AuthRequest, res)
+router.get("/:id", (req: Request, res: Response) =>
+  businessController.getById(req as unknown as AuthRequest, res),
 );
-router.put('/:id', can('update', 'business'), (req: Request, res: Response) => 
-  businessController.update(req as unknown as AuthRequest, res)
+
+/**
+ * @swagger
+ * /business/{id}:
+ *   put:
+ *     summary: Update a business
+ *     tags: [Business]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               logo_url:
+ *                 type: string
+ *               is_active:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Business updated successfully
+ *       404:
+ *         description: Business not found
+ */
+router.put("/:id", can("update", "business"), (req: Request, res: Response) =>
+  businessController.update(req as unknown as AuthRequest, res),
 );
-router.delete('/:id', can('delete', 'business'), (req: Request, res: Response) => 
-  businessController.delete(req as unknown as AuthRequest, res)
+
+/**
+ * @swagger
+ * /business/{id}:
+ *   delete:
+ *     summary: Delete a business
+ *     tags: [Business]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Business deleted successfully
+ *       404:
+ *         description: Business not found
+ */
+router.delete(
+  "/:id",
+  can("delete", "business"),
+  (req: Request, res: Response) =>
+    businessController.delete(req as unknown as AuthRequest, res),
 );
 
 export default router;
