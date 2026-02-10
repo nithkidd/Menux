@@ -35,7 +35,9 @@ export class BusinessController {
     try {
       let businesses: Business[];
       
-      if (req.requiresOwnershipCheck) {
+      const scope = req.query.scope as string;
+      
+      if (req.requiresOwnershipCheck || scope === 'own') {
         businesses = await businessService.getAllByOwner(req.profileId);
       } else {
         businesses = await businessService.getAll();

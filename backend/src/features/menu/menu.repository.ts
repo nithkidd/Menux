@@ -27,6 +27,7 @@ export class MenuRepository {
       .select('id, name, slug, logo_url, description, business_type, contact_email, contact_phone, address, website_url, social_links, opening_hours, primary_color, cover_image_url, currency')
       .eq('slug', slug)
       .eq('is_active', true)
+      .eq('is_published', true)
       .single();
 
     if (error) return null;

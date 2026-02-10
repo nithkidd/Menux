@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard } from 'lucide-react';
+import { LayoutDashboard, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../features/auth/auth.context';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -43,9 +43,6 @@ export default function Navbar() {
                     <a href="#pricing" className="text-stone-600 dark:text-stone-300 hover:text-orange-600 dark:hover:text-orange-500 transition-colors font-medium">Pricing</a>
                 </>
             )}
-            {!isLanding && user && (
-                 <Link to="/dashboard" className="text-stone-600 dark:text-stone-300 hover:text-orange-600 dark:hover:text-orange-500 transition-colors font-medium">Dashboard</Link>
-            )}
           </div>
 
           <div className="flex items-center space-x-4">
@@ -54,11 +51,16 @@ export default function Navbar() {
               <div className="relative" ref={dropdownRef}>
                   <button 
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex items-center space-x-2 focus:outline-none btn-press"
+                    className="flex items-center space-x-2 focus:outline-none btn-press relative"
                   >
                     <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold border border-orange-200">
                         {user.full_name ? user.full_name[0].toUpperCase() : user.email[0].toUpperCase()}
                     </div>
+                    {user.role === 'admin' && (
+                      <div className="absolute -bottom-1 -right-1 bg-stone-900 dark:bg-white text-white dark:text-stone-900 p-0.5 rounded-full border-2 border-white dark:border-stone-900 shadow-sm" title="Administrator">
+                        <ShieldCheck size={12} strokeWidth={2.5} />
+                      </div>
+                    )}
                   </button>
 
                   {isDropdownOpen && (

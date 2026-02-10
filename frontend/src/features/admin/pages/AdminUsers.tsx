@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import * as adminService from '../services/admin.service';
 import type { AdminUser } from '../services/admin.service';
 import api from '../../../shared/utils/api';
-import { Search, Loader2, Trash2, Mail, User, Shield, ShieldAlert, X } from 'lucide-react';
+import { Search, Loader2, Trash2, Mail, User, ShieldAlert, X } from 'lucide-react';
 
 // Using a simplified modal component here or reusing existing one if better.
 // For now, inline modal for simplicity as per original file but styled better.
@@ -14,7 +14,7 @@ export default function AdminUsers() {
   
   // Invite State
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("user");
+  const [inviteRole, setInviteRole] = useState<AdminUser['role']>("user");
   const [inviting, setInviting] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
 
@@ -39,7 +39,7 @@ export default function AdminUsers() {
     try {
       await adminService.updateUserRole(id, newRole);
       setUsers((prev) =>
-        prev.map((u) => (u.id === id ? { ...u, role: newRole } : u)),
+        prev.map((u) => (u.id === id ? { ...u, role: newRole as AdminUser['role'] } : u)),
       );
     } catch (err: any) {
       console.error(err);
@@ -163,21 +163,17 @@ export default function AdminUsers() {
                             value={u.role}
                             onChange={(e) => handleRoleChange(u.id, e.target.value)}
                             className={`appearance-none pl-8 pr-8 py-1.5 rounded-lg text-xs font-bold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 ${
-                              u.role === "super_admin"
-                                ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30 ring-red-500"
-                                : u.role === "admin"
-                                  ? "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/30 ring-orange-500"
+                              u.role === "admin"
+                                  ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-900/30 ring-purple-500"
                                   : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/30 ring-blue-500"
                             }`}
                           >
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
-                            <option value="super_admin">Super Admin</option>
+                            <option value="user">User (Business Owner)</option>
+                            <option value="admin">Admin (Platform)</option>
                           </select>
                           <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                             {u.role === 'super_admin' ? <ShieldAlert size={12} className="text-red-600" /> : 
-                              u.role === 'admin' ? <Shield size={12} className="text-orange-600" /> : 
-                              <User size={12} className="text-blue-600" />}
+                              {u.role === 'admin' ? <ShieldAlert size={12} className="text-purple-600" /> : 
+                               <User size={12} className="text-blue-600" />}
                           </div>
                       </div>
                     </td>
@@ -269,12 +265,11 @@ export default function AdminUsers() {
                         <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Role</label>
                         <select
                             value={inviteRole}
-                            onChange={(e) => setInviteRole(e.target.value)}
+                            onChange={(e) => setInviteRole(e.target.value as AdminUser['role'])}
                             className="w-full rounded-xl border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
                         >
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
-                            <option value="super_admin">Super Admin</option>
+                            <option value="user">User (Business Owner)</option>
+                            <option value="admin">Admin (Platform)</option>
                         </select>
                     </div>
 

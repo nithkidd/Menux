@@ -23,6 +23,7 @@ export class BusinessService {
       slug,
       business_type: dto.business_type,
       description: dto.description,
+      is_published: dto.is_published,
     });
 
     if (!business) {
@@ -99,6 +100,21 @@ export class BusinessService {
     const existing = await businessRepository.findByIdAndOwner(id, profileId);
     if (!existing) {
       return null;
+    }
+
+    // Handle slug update
+    if (dto.slug && dto.slug !== existing.slug) {
+      // Basic validation
+      const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+      if (!slugRegex.test(dto.slug)) {
+        throw new Error('Invalid slug format. Use lowercase alphanumeric and hyphens only.');
+      }
+      
+      // Check availability
+      const taken = await businessRepository.slugExists(dto.slug);
+      if (taken) {
+        throw new Error('Slug is already taken.');
+      }
     }
 
     return businessRepository.update(id, dto);

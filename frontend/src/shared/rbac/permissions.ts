@@ -6,7 +6,7 @@
  */
 
 // Available roles in the system
-export type Role = 'user' | 'admin' | 'super_admin';
+export type Role = 'user' | 'admin';
 
 // Resources that can be accessed
 export type Resource = 
@@ -30,21 +30,16 @@ export type Permission = Action | `${Action}:own`;
 
 // Permission matrix: role -> resource -> allowed permissions
 export const PERMISSIONS: Record<Role, Partial<Record<Resource, Permission[]>>> = {
+  // User (Business Owner)
   user: {
-    business:   ['create', 'read:own', 'update:own', 'delete:own'],
-    category:   ['create', 'read:own', 'update:own', 'delete:own'],
-    item:       ['create', 'read:own', 'update:own', 'delete:own'],
-    profile:    ['read:own', 'update:own'],
+    business:        ['create', 'read:own', 'update:own', 'delete:own'],
+    category:        ['create:own', 'read:own', 'update:own', 'delete:own'],
+    item:            ['create:own', 'read:own', 'update:own', 'delete:own'],
+    profile:         ['read:own', 'update:own'],
   },
+  
+  // Admin (Platform Admin)
   admin: {
-    business:        ['create', 'read', 'update', 'delete'],
-    category:        ['create', 'read', 'update', 'delete'],
-    item:            ['create', 'read', 'update', 'delete'],
-    profile:         ['read', 'update'],
-    user:            ['read'],
-    admin_dashboard: ['read'],
-  },
-  super_admin: {
     business:        ['create', 'read', 'update', 'delete', 'manage'],
     category:        ['create', 'read', 'update', 'delete', 'manage'],
     item:            ['create', 'read', 'update', 'delete', 'manage'],

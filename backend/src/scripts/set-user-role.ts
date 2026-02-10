@@ -25,12 +25,12 @@ async function promoteUser() {
 
   if (!email || !role) {
     console.log('Usage: npx ts-node src/scripts/promote-user.ts <email> <role>');
-    console.log('Roles: user, admin, super_admin');
+    console.log('Roles: user, admin');
     process.exit(1);
   }
 
-  if (!['user', 'admin', 'super_admin'].includes(role)) {
-    console.error('Invalid role. Must be one of: user, admin, super_admin');
+  if (!['user', 'admin'].includes(role)) {
+    console.error('Invalid role. Must be one of: user, admin');
     process.exit(1);
   }
 

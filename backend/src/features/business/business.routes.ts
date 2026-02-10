@@ -35,7 +35,27 @@ const router = Router();
  *               business_type:
  *                 type: string
  *                 enum: [restaurant, gaming_gear]
+ *               slug:
+ *                 type: string
+ *                 description: Unique URL slug for the business
+ *               primary_color:
+ *                 type: string
+ *                 description: Hex color code (e.g., #FF5733)
  *               description:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               website:
+ *                 type: string
+ *               instagram_url:
+ *                 type: string
+ *               facebook_url:
+ *                 type: string
+ *               twitter_url:
  *                 type: string
  *     responses:
  *       201:
@@ -108,12 +128,33 @@ router.get("/:id", (req: Request, res: Response) =>
  *             properties:
  *               name:
  *                 type: string
+ *               slug:
+ *                 type: string
+ *                 description: Unique URL slug
  *               description:
+ *                 type: string
+ *               primary_color:
  *                 type: string
  *               logo_url:
  *                 type: string
  *               is_active:
  *                 type: boolean
+ *               is_published:
+ *                 type: boolean
+ *               email:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               website:
+ *                 type: string
+ *               instagram_url:
+ *                 type: string
+ *               facebook_url:
+ *                 type: string
+ *               twitter_url:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Business updated successfully

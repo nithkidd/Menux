@@ -17,7 +17,7 @@ export interface UsePermissionsReturn {
   hasRole: (...roles: Role[]) => boolean;
   /** Check if user is admin or super_admin */
   isAdmin: boolean;
-  /** Check if user is super_admin */
+  /** @deprecated Super admin role is removed */
   isSuperAdmin: boolean;
   /** Current user role */
   role: Role;
@@ -43,9 +43,10 @@ export function usePermissions(): UsePermissionsReturn {
     
     hasRole: (...roles: Role[]) => roles.includes(role),
     
-    isAdmin: role === 'admin' || role === 'super_admin',
+    isAdmin: role === 'admin',
     
-    isSuperAdmin: role === 'super_admin',
+    // Deprecated but kept for compatibility if needed (always false)
+    isSuperAdmin: false,
     
     role,
   }), [role]);

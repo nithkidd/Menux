@@ -49,10 +49,10 @@ router.get("/stats", can("read", "admin_dashboard"), adminController.getStats);
  *       403:
  *         description: Forbidden - super_admin role required
  */
-// ─── Business Management (admin+) ──────────────────────────────────
+// ─── Business Management (admin only) ──────────────────────────────────
 router.get(
   "/businesses",
-  requireRole("super_admin"),
+  requireRole("admin"),
   adminController.listBusinesses,
 );
 
@@ -133,8 +133,8 @@ router.delete(
  *       403:
  *         description: Forbidden - super_admin role required
  */
-// ─── User Management (super_admin only) ─────────────────────────────
-router.get("/users", requireRole("super_admin"), adminController.listUsers);
+// ─── User Management (admin only) ─────────────────────────────
+router.get("/users", requireRole("admin"), adminController.listUsers);
 
 /**
  * @swagger
@@ -170,7 +170,7 @@ router.get("/users", requireRole("super_admin"), adminController.listUsers);
  */
 router.patch(
   "/users/:id/role",
-  requireRole("super_admin"),
+  requireRole("admin"),
   adminController.updateRole,
 );
 
@@ -196,7 +196,7 @@ router.patch(
  */
 router.delete(
   "/users/:id",
-  requireRole("super_admin"),
+  requireRole("admin"),
   adminController.deleteUser,
 );
 
@@ -231,7 +231,7 @@ router.delete(
  */
 router.post(
   "/users/invite",
-  requireRole("super_admin"),
+  requireRole("admin"),
   adminController.inviteUser,
 );
 

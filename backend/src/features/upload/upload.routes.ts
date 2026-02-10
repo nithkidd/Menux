@@ -43,8 +43,8 @@ const upload = multer({
  *       200:
  *         description: Logo uploaded successfully
  */
-// Upload routes (all protected)
-router.post('/logo', requireRole('admin', 'super_admin'), upload.single('file'), (req: Request, res: Response) => 
+// Upload routes (all protected for Business Owners and Platform Admin)
+router.post('/logo', requireRole('user', 'admin'), upload.single('file'), (req: Request, res: Response) => 
   uploadController.uploadLogo(req as unknown as AuthRequest, res)
 );
 
@@ -70,7 +70,7 @@ router.post('/logo', requireRole('admin', 'super_admin'), upload.single('file'),
  *       200:
  *         description: Image uploaded successfully
  */
-router.post('/image', requireRole('admin', 'super_admin'), upload.single('file'), (req: Request, res: Response) => 
+router.post('/image', requireRole('user', 'admin'), upload.single('file'), (req: Request, res: Response) => 
   uploadController.uploadImage(req as unknown as AuthRequest, res)
 );
 

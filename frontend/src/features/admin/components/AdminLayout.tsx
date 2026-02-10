@@ -29,7 +29,7 @@ export default function AdminLayout({ children, activeTab, onTabChange }: AdminL
   const navItems: { id: Tab; label: string; icon: LucideIcon; superOnly?: boolean }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'businesses', label: 'Businesses', icon: Building2 },
-    { id: 'users', label: 'Users', icon: Users, superOnly: true },
+    { id: 'users', label: 'Users', icon: Users },
   ];
 
   const handleSignOut = async () => {

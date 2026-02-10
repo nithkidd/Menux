@@ -47,12 +47,12 @@ export const can = (action: Action, resource: Resource) => {
  */
 export const requireRole = (...allowedRoles: Role[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const authReq = req as AuthRequest;
-    const role = (authReq.role || 'user') as Role;
-
-    if (allowedRoles.includes(role)) {
-      return next();
-    }
+      const authReq = req as AuthRequest;
+      const role = (authReq.role || 'user') as Role;
+  
+      if (allowedRoles.includes(role)) {
+        return next();
+      }
 
     return res.status(403).json({
       success: false,

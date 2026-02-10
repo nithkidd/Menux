@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { menuService, type Category, type Item } from '../services/menu.service';
 import { foodTypeService } from '../services/food-type.service';
 import { businessService, type Business } from '../../business/services/business.service';
-import { Plus, ExternalLink, PlayCircle } from 'lucide-react'; 
+import { Plus, ExternalLink, PlayCircle, ChevronRight, ArrowLeft } from 'lucide-react'; 
 import PageTransition from '../../../shared/components/PageTransition'; 
 import ItemModal from '../components/ItemModal';
 import CategoryModal from '../components/CategoryModal';
@@ -238,23 +238,39 @@ export default function MenuEditor() {
   return (
     <PageTransition className="pb-20">
       <div className="bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-                <Link to="/dashboard" className="text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors btn-press">← Back</Link>
-                <h1 className="text-2xl font-bold text-stone-900 dark:text-white tracking-tight">Menu Editor: {business?.name}</h1>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+            {/* Breadcrumbs */}
+            <div className="flex items-center gap-2 text-sm text-stone-500 mb-6">
+                <Link to="/dashboard" className="hover:text-orange-600 transition-colors">Dashboard</Link>
+                <ChevronRight size={14} />
+                <span className="font-medium text-stone-900 dark:text-white">{business?.name || 'Loading...'}</span>
+                <ChevronRight size={14} />
+                <span className="font-medium text-orange-600">Menu</span>
             </div>
-            {business && (
-              <a 
-                href={`/menu/${business.slug}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-bold rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-stone-700 shadow-sm btn-press"
-              >
-                  <PlayCircle size={18} className="mr-2 text-orange-600 dark:text-orange-500" />
-                  <span>Live Preview</span>
-                  <ExternalLink size={14} className="ml-2 text-stone-400" />
-              </a>
-            )}
+
+            <div className="flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                    <Link 
+                        to="/dashboard" 
+                        className="p-2 rounded-xl text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800 transition-colors"
+                    >
+                        <ArrowLeft size={24} />
+                    </Link>
+                    <h1 className="text-2xl font-bold text-stone-900 dark:text-white tracking-tight">Menu Editor</h1>
+                </div>
+                {business && (
+                <a 
+                    href={`/menu/${business.slug}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-4 py-2 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-bold rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-stone-700 shadow-sm btn-press"
+                >
+                    <PlayCircle size={18} className="mr-2 text-orange-600 dark:text-orange-500" />
+                    <span>Live Preview</span>
+                    <ExternalLink size={14} className="ml-2 text-stone-400" />
+                </a>
+                )}
+            </div>
         </div>
       </div>
 

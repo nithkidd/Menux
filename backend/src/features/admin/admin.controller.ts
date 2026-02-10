@@ -88,7 +88,7 @@ export async function deleteBusiness(req: Request, res: Response) {
   }
 }
 
-// ─── User Management (Super Admin) ─────────────────────────────────
+// ─── User Management (Admin) ─────────────────────────────────
 
 export async function listUsers(_req: Request, res: Response) {
   try {
@@ -115,7 +115,7 @@ export async function updateRole(req: Request, res: Response) {
       return;
     }
 
-    // Prevent super_admin from demoting themselves
+    // Prevent admin from demoting themselves
     if (id === authReq.profileId) {
       res
         .status(400)

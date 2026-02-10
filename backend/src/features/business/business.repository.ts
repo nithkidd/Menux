@@ -10,6 +10,7 @@ export class BusinessRepository {
     slug: string;
     business_type: string;
     description?: string;
+    is_published?: boolean;
   }): Promise<Business | null> {
     const { data: business, error } = await supabaseAdmin
       .from(this.table)
@@ -19,6 +20,7 @@ export class BusinessRepository {
         slug: data.slug,
         business_type: data.business_type,
         description: data.description || null,
+        is_published: data.is_published ?? false,
       })
       .select()
       .single();
@@ -77,6 +79,7 @@ export class BusinessRepository {
       .select('*')
       .eq('slug', slug)
       .eq('is_active', true)
+      .eq('is_published', true)
       .single();
 
     if (error) return null;

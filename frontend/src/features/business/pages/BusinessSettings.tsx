@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { businessService, type Business } from '../services/business.service';
-import { Save, Loader2, Globe, Facebook, Instagram, Twitter, MapPin, Phone, Mail, DollarSign, Palette, Layout } from 'lucide-react';
+import { Loader2, Globe, Facebook, Instagram, Twitter, MapPin, Phone, Mail, DollarSign, Palette, Layout, ArrowLeft, Check, X, ChevronRight } from 'lucide-react';
 
 export default function BusinessSettings() {
   const { businessId } = useParams<{ businessId: string }>();
+  // navigate removed as unused
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'appearance'>('general');
 
   // Form State
   const [formData, setFormData] = useState<Partial<Business>>({});
+  
+  // Check for changes (simple deep compare)
+  const hasChanges = JSON.stringify(business) !== JSON.stringify(formData);
 
   useEffect(() => {
     if (businessId) loadBusiness();
@@ -50,16 +54,27 @@ export default function BusinessSettings() {
     if (!businessId) return;
 
     try {
-      setSaving(true);
-      const updated = await businessService.update(businessId, formData);
+      setSaveStatus('saving');
+      
+      // Sanitization
+      const payload = { ...formData };
+      if (payload.slug) {
+        // Remove leading/trailing hyphens
+        payload.slug = payload.slug.replace(/^-+|-+$/g, '');
+      }
+
+      const updated = await businessService.update(businessId, payload);
       setBusiness(updated);
       setFormData(updated);
-      alert("Settings saved successfully!");
-    } catch (error) {
+      setSaveStatus('success');
+      
+      // Reset after success
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (error: any) {
         console.error("Failed to save settings", error);
-        alert("Failed to save settings.");
-    } finally {
-      setSaving(false);
+        setSaveStatus('error');
+        // Reset after error
+        setTimeout(() => setSaveStatus('idle'), 2000);
     }
   };
 
@@ -68,18 +83,61 @@ export default function BusinessSettings() {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      {/* Breadcrumbs */}
+      <div className="flex items-center gap-2 text-sm text-stone-500 mb-6">
+        <Link to="/dashboard" className="hover:text-orange-600 transition-colors">Dashboard</Link>
+        <ChevronRight size={14} />
+        <span className="font-medium text-stone-900 dark:text-white">{business?.name || 'Loading...'}</span>
+        <ChevronRight size={14} />
+        <span className="font-medium text-orange-600">Settings</span>
+      </div>
+
       <div className="flex justify-between items-center mb-8">
-        <div>
-            <h1 className="text-2xl font-bold text-stone-900 dark:text-white">Business Settings</h1>
-            <p className="text-stone-500 dark:text-stone-400 mt-1">Manage your business profile and preferences.</p>
+        <div className="flex items-center gap-4">
+            <Link 
+                to="/dashboard" 
+                className="p-2 rounded-xl text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800 transition-colors"
+            >
+                <ArrowLeft size={24} />
+            </Link>
+            <div>
+                <h1 className="text-2xl font-bold text-stone-900 dark:text-white">Business Settings</h1>
+                <p className="text-stone-500 dark:text-stone-400 mt-1">Manage your business profile and preferences.</p>
+            </div>
         </div>
         <button
             onClick={handleSubmit}
-            disabled={saving}
-            className="flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-xl hover:bg-orange-700 transition-colors btn-press disabled:opacity-50"
+            disabled={saveStatus !== 'idle' || !hasChanges}
+            className={`
+                flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all shadow-sm active:scale-95
+                ${saveStatus === 'success' 
+                    ? 'bg-green-600 text-white hover:bg-green-700' 
+                    : saveStatus === 'error'
+                        ? 'bg-red-600 text-white hover:bg-red-700'
+                        : hasChanges
+                            ? 'bg-orange-600 text-white hover:bg-orange-700 shadow-orange-500/20'
+                            : 'bg-stone-200 text-stone-400 dark:bg-stone-800 dark:text-stone-600 cursor-not-allowed'
+                }
+            `}
         >
-            {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-            Save Changes
+            {saveStatus === 'saving' ? (
+                <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Saving...</span>
+                </>
+            ) : saveStatus === 'success' ? (
+                <>
+                    <Check size={18} />
+                    <span>Saved!</span>
+                </>
+            ) : saveStatus === 'error' ? (
+                <>
+                    <X size={18} />
+                    <span>Failed</span>
+                </>
+            ) : (
+                <span>Save Changes</span>
+            )}
         </button>
       </div>
 
@@ -124,6 +182,55 @@ export default function BusinessSettings() {
                                     className="w-full rounded-xl border-stone-200 dark:border-stone-700 dark:bg-stone-950 dark:text-white focus:ring-orange-500 focus:border-orange-500"
                                 />
                             </div>
+
+                            <div className="p-4 bg-stone-50 dark:bg-stone-800/50 rounded-xl border border-stone-100 dark:border-stone-800">
+                                <label className="block text-sm font-bold text-stone-900 dark:text-white mb-2">Business URL & Visibility</label>
+                                
+                                {/* Slug Input */}
+                                <div className="mb-4">
+                                    <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">URL Slug</label>
+                                    <div className="flex items-center">
+                                        <span className="text-stone-400 dark:text-stone-500 text-sm mr-2 select-none">menux.com/</span>
+                                        <input
+                                            type="text"
+                                            name="slug"
+                                            value={formData.slug || ''}
+                                            onChange={(e) => {
+                                                // Simple client-side validation for display
+                                                const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                                                setFormData(prev => ({ ...prev, slug: val }));
+                                            }}
+                                            className="flex-1 rounded-xl border-stone-200 dark:border-stone-700 dark:bg-stone-950 dark:text-white focus:ring-orange-500 focus:border-orange-500 font-mono text-sm"
+                                        />
+                                    </div>
+                                    <p className="mt-1 text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1">
+                                        <span className="font-bold">Warning:</span> Changing this will break existing QR codes and links.
+                                    </p>
+                                </div>
+
+                                {/* Publish Toggle */}
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <span className="block text-sm font-medium text-stone-900 dark:text-stone-200">Public Visibility</span>
+                                        <span className="block text-xs text-stone-500 dark:text-stone-400">
+                                            {formData.is_published 
+                                                ? "Your menu is visible to the public." 
+                                                : "Your menu is hidden (404 Not Found)."}
+                                        </span>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            className="sr-only peer"
+                                            checked={formData.is_published || false}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, is_published: e.target.checked }))}
+                                        />
+                                        <div className="w-11 h-6 bg-stone-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 dark:peer-focus:ring-orange-800 rounded-full peer dark:bg-stone-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-orange-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            {/* Description - this was the next block */}
                             
                             <div>
                                 <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Description</label>

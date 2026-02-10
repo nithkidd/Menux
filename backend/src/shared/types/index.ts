@@ -29,6 +29,7 @@ export interface Business {
   logo_url: string | null;
   description: string | null;
   is_active: boolean;
+  is_published: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -69,7 +70,7 @@ export interface ApiResponse<T = unknown> {
 export interface PublicMenu {
   business: Pick<
     Business,
-    "name" | "slug" | "logo_url" | "description" | "business_type"
+    "name" | "slug" | "logo_url" | "description" | "business_type" | "is_published"
   >;
   categories: (Category & { items: Item[] })[];
 }
@@ -79,13 +80,16 @@ export interface CreateBusinessDto {
   name: string;
   business_type: BusinessType;
   description?: string;
+  is_published?: boolean;
 }
 
 export interface UpdateBusinessDto {
   name?: string;
+  slug?: string;
   description?: string;
   logo_url?: string;
   is_active?: boolean;
+  is_published?: boolean;
 }
 
 export interface CreateCategoryDto {

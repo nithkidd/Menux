@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { businessService } from '../services/business.service';
+import { ChevronRight, ArrowLeft } from 'lucide-react';
 import PageTransition from '../../../shared/components/PageTransition';
 
 export default function CreateBusiness() {
@@ -32,15 +33,30 @@ export default function CreateBusiness() {
 
   return (
     <PageTransition>
-      <div className="flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-stone-900 dark:text-white">
-            Create a new Business
-            </h2>
-            <p className="mt-2 text-center text-sm text-stone-600 dark:text-stone-400">
-                Start managing your digital menu in seconds.
-            </p>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumbs */}
+        <div className="flex items-center gap-2 text-sm text-stone-500 mb-6">
+            <Link to="/dashboard" className="hover:text-orange-600 transition-colors">Dashboard</Link>
+            <ChevronRight size={14} />
+            <span className="font-medium text-orange-600">Create Business</span>
         </div>
+
+        <div className="flex items-center gap-4 mb-8">
+            <button 
+                onClick={() => navigate('/dashboard')}
+                className="p-2 rounded-xl text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800 transition-colors"
+            >
+                <ArrowLeft size={24} />
+            </button>
+            <h1 className="text-2xl font-bold text-stone-900 dark:text-white">Create a new Business</h1>
+        </div>
+
+        <div className="flex flex-col justify-center">
+            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+                <p className="text-center text-sm text-stone-600 dark:text-stone-400 mb-8">
+                    Start managing your digital menu in seconds.
+                </p>
+            </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
             <div className="bg-white dark:bg-stone-900 py-8 px-4 shadow-sm sm:rounded-3xl sm:px-10 border border-stone-200 dark:border-stone-800">
@@ -116,6 +132,7 @@ export default function CreateBusiness() {
             </form>
             </div>
         </div>
+      </div>
       </div>
     </PageTransition>
   );

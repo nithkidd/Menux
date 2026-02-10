@@ -31,7 +31,7 @@ export interface AdminUser {
   email: string;
   full_name: string | null;
   avatar_url: string | null;
-  role: string;
+  role: 'user' | 'admin';
   created_at: string;
   last_sign_in_at: string | null;
   businessCount: number;

@@ -6,7 +6,8 @@
  */
 
 // Available roles in the system
-export type Role = 'user' | 'admin' | 'super_admin';
+// Available roles in the system
+export type Role = 'user' | 'admin';
 
 // Resources that can be accessed
 export type Resource = 
@@ -30,20 +31,17 @@ export type Permission = Action | `${Action}:own`;
 
 // Permission matrix: role -> resource -> allowed permissions
 export const PERMISSIONS: Record<Role, Partial<Record<Resource, Permission[]>>> = {
+  // User (Business Owner)
   user: {
-    // User is just a viewer of public menus or their own profile
-    profile:    ['read:own', 'update:own'],
-  },
-  admin: {
-    // Admin is a Business Owner - can only manage their own resources
     business:        ['create', 'read:own', 'update:own', 'delete:own'],
     category:        ['create:own', 'read:own', 'update:own', 'delete:own'],
     item:            ['create:own', 'read:own', 'update:own', 'delete:own'],
-    profile:         ['read', 'update'],
-    user:            ['read'],
-    admin_dashboard: ['read'],
+    profile:         ['read:own', 'update:own'],
+    // Users can't access admin dashboard or manage other users
   },
-  super_admin: {
+  
+  // Admin (Platform Admin) - formerly Super Admin
+  admin: {
     business:        ['create', 'read', 'update', 'delete', 'manage'],
     category:        ['create', 'read', 'update', 'delete', 'manage'],
     item:            ['create', 'read', 'update', 'delete', 'manage'],
@@ -54,7 +52,7 @@ export const PERMISSIONS: Record<Role, Partial<Record<Resource, Permission[]>>> 
 };
 
 // Role hierarchy for inheritance (higher index = more permissions)
-export const ROLE_HIERARCHY: Role[] = ['user', 'admin', 'super_admin'];
+export const ROLE_HIERARCHY: Role[] = ['user', 'admin'];
 
 /**
  * Check if a role has a specific permission on a resource.

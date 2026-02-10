@@ -25,13 +25,13 @@ async function setRole() {
 
   if (!email || !role) {
     console.log('\nUsage: npx tsx src/scripts/set-role.ts <email> <role>');
-    console.log('Roles: user, admin, super_admin');
+    console.log('Roles: user, admin');
     console.log('\nExample: npx tsx src/scripts/set-role.ts user@example.com admin\n');
     process.exit(1);
   }
 
-  if (!['user', 'admin', 'super_admin'].includes(role)) {
-    console.error('❌ Invalid role. Must be one of: user, admin, super_admin');
+  if (!['user', 'admin'].includes(role)) {
+    console.error('❌ Invalid role. Must be one of: user, admin');
     process.exit(1);
   }
 

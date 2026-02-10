@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Tag, Leaf, Flame, Droplets, Sun, Heart, Award, Zap, Coffee, Type } from 'lucide-react';
+import { Plus, X, Leaf, Flame, Droplets, Sun, Heart, Award, Zap, Coffee, Type } from 'lucide-react';
 import { type FoodType, foodTypeService } from '../services/food-type.service';
 
 interface FoodTypeManagerProps {

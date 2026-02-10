@@ -4,7 +4,7 @@
  * Handles admin operations:
  * - Dashboard stats
  * - Business management (admin+)
- * - User management via Supabase Admin SDK (super_admin)
+ * - User management via Supabase Admin SDK (admin)
  */
 
 import { supabaseAdmin } from "../../config/supabase.js";
@@ -139,7 +139,7 @@ export async function deleteBusiness(id: string) {
   return true;
 }
 
-// ─── User Management (Super Admin) ─────────────────────────────────
+// ─── User Management (Admin) ─────────────────────────────────
 
 export interface AdminUser {
   id: string; // profile id
@@ -202,7 +202,7 @@ export async function listAllUsers(): Promise<AdminUser[]> {
 
 export async function updateUserRole(profileId: string, role: string) {
   // Validate role
-  const validRoles = ["user", "admin", "super_admin"];
+  const validRoles = ["user", "admin"];
   if (!validRoles.includes(role)) {
     throw new Error(
       `Invalid role: ${role}. Must be one of: ${validRoles.join(", ")}`,
@@ -358,7 +358,7 @@ async function deleteBusinessRecursively(businessId: string) {
 }
 
 export async function inviteUser(email: string, role: string = "user") {
-  const validRoles = ["user", "admin", "super_admin"];
+  const validRoles = ["user", "admin"];
   if (!validRoles.includes(role)) {
     throw new Error(`Invalid role: ${role}`);
   }

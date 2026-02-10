@@ -9,6 +9,7 @@ export interface Business {
   logo_url: string | null;
   description: string | null;
   is_active: boolean;
+  is_published: boolean;
   created_at: string;
   // New Settings Fields
   contact_email?: string;
@@ -23,8 +24,8 @@ export interface Business {
 }
 
 export const businessService = {
-  getAll: async () => {
-    const response = await api.get<{ success: boolean; data: Business[] }>('/business');
+  getAll: async (params?: { scope?: string }) => {
+    const response = await api.get<{ success: boolean; data: Business[] }>('/business', { params });
     return response.data.data;
   },
 

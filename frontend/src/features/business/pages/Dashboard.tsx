@@ -19,7 +19,8 @@ export default function Dashboard() {
   const loadBusinesses = async () => {
     try {
       setLoading(true);
-      const data = await businessService.getAll();
+      // Admin might have global access, but on dashboard we only want to see THEIR businesses
+      const data = await businessService.getAll({ scope: 'own' });
       setBusinesses(data);
     } catch (err: any) {
       setError(err.message || 'Failed to load businesses');
@@ -102,13 +103,12 @@ export default function Dashboard() {
                         >
                             Edit Menu
                         </Link>
-                        
                         <Link 
                             to={`/dashboard/business/${biz.id}/settings`}
-                            className="inline-flex items-center text-sm font-medium text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors gap-1"
+                            className="inline-flex items-center text-sm font-medium text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200 transition-colors gap-1"
                         >
                             <Settings size={16} />
-                            Settings
+                            Manage
                         </Link>
                     </div>
                 </div>
