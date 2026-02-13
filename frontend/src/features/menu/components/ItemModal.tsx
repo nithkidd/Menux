@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { X, ImagePlus, Check, Trash2, Ban } from 'lucide-react';
-import { type Item, type Category } from '../services/menu.service';
+import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
+import { X, Check, Ban } from 'lucide-react';
+import { menuService, type Item, type Category } from '../services/menu.service';
 import { FoodTypeManager } from './FoodTypeManager';
 import { foodTypeService } from '../services/food-type.service';
 
@@ -15,6 +15,8 @@ interface ItemModalProps {
 }
 
 import Portal from '../../../shared/components/Portal';
+
+import { ImageUpload } from '../../../shared/components/ImageUpload';
 
 export default function ItemModal({
   isOpen,
@@ -73,7 +75,7 @@ export default function ItemModal({
 
   if (!isOpen) return null;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
     if (type === 'number') {
@@ -95,7 +97,7 @@ export default function ItemModal({
       );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!formData.name || formData.price === undefined || formData.price < 0) {
       setFormError('Please provide a name and a non-negative price.');
@@ -105,7 +107,22 @@ export default function ItemModal({
     onSave(formData, selectedFoodTypeIds);
   };
 
-  return (
+    const handleImageRemove = async () => {
+        if (formData.image_url) {
+            try {
+                const publicId = menuService.getPublicIdFromUrl(formData.image_url);
+                if (publicId) {
+                    await menuService.deleteImage(publicId);
+                }
+            } catch (error) {
+                console.error("Failed to delete image", error);
+                // Optionally show error to user, but usually we just want to clear the field
+            }
+            setFormData(prev => ({ ...prev, image_url: null }));
+        }
+    };
+
+    return (
     <Portal>
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
         {/* Backdrop */}
@@ -133,40 +150,16 @@ export default function ItemModal({
             {/* Scrollable Body */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 
-                {/* Image Preview */}
-                <div className="relative group">
-                {formData.image_url ? (
-                    <div className="relative w-full h-48 rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700">
-                    <img
-                        src={formData.image_url}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
+                {/* Image Upload */}
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300">
+                        Item Photo
+                    </label>
+                    <ImageUpload 
+                        onUpload={(url) => setFormData(prev => ({ ...prev, image_url: url }))}
+                        onRemove={handleImageRemove}
+                        initialUrl={formData.image_url}
                     />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                        type="button"
-                        onClick={() =>
-                            setFormData((prev) => ({
-                            ...prev,
-                            image_url: null,
-                            }))
-                        }
-                        className="bg-red-600 text-white p-2 rounded-full hover:bg-red-700 btn-press"
-                        >
-                        <Trash2 size={20} />
-                        </button>
-                    </div>
-                    </div>
-                ) : (
-                    <div className="w-full h-40 md:h-48 bg-stone-50 dark:bg-stone-950 border-2 border-dashed border-stone-200 dark:border-stone-800 rounded-xl flex flex-col items-center justify-center text-stone-400 dark:text-stone-600">
-                    <div className="bg-white dark:bg-stone-800 p-3 rounded-full shadow-sm mb-3">
-                        <ImagePlus size={24} />
-                    </div>
-                    <span className="text-xs font-medium text-stone-500 dark:text-stone-400">
-                        Paste an image URL below to see a preview here.
-                    </span>
-                    </div>
-                )}
                 </div>
 
                 <form id="item-form" onSubmit={handleSubmit} className="space-y-6">
@@ -240,23 +233,6 @@ export default function ItemModal({
                                 placeholder="Describe the ingredients and flavor profile..."
                                 className="w-full rounded-xl border-stone-200 dark:border-stone-700 dark:bg-stone-950 dark:text-white shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-sm resize-none"
                             />
-                        </div>
-                        {/* Row 4: Image URL */}
-                        <div>
-                        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
-                            Image URL
-                        </label>
-                        <input
-                            type="url"
-                            name="image_url"
-                            value={formData.image_url || ''}
-                            onChange={handleChange}
-                            placeholder="https://example.com/your-image.jpg"
-                            className="w-full rounded-xl border-stone-200 dark:border-stone-700 dark:bg-stone-950 dark:text-white shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-sm"
-                        />
-                        <p className="mt-1 text-xs text-stone-400 dark:text-stone-500">
-                            We’ll use this URL to display the item photo in your menu.
-                        </p>
                         </div>
                     </div>
 

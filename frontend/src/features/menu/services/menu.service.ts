@@ -63,5 +63,32 @@ export const menuService = {
   reorderItems: async (_categoryId: string, items: { id: string; sort_order: number }[]) => {
     // categoryId arg kept for compatibility if needed, but not used in URL
     await api.put(`/items/reorder`, { items });
+  },
+
+  uploadImage: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await api.post<{ data: { url: string } }>('/upload/image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data.url;
+  },
+
+  uploadImageFromUrl: async (url: string): Promise<string> => {
+    const response = await api.post<{ data: { url: string } }>('/upload/url', { url });
+    return response.data.data.url;
+  },
+
+  deleteImage: async (publicId: string): Promise<void> => {
+    await api.delete(`/upload/${encodeURIComponent(publicId)}`);
+  },
+
+  getPublicIdFromUrl: (url: string): string | null => {
+    const regex = /\/upload\/(?:v\d+\/)?(.+?)\.[a-zA-Z0-9]+$/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
   }
 };

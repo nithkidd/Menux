@@ -1,65 +1,150 @@
-import { supabaseAdmin } from '../../config/supabase.js';
+import cloudinary from "../../config/cloudinary.js";
+import { Readable } from "stream";
 
 export interface UploadResult {
   url: string;
-  path: string;
+  publicId: string;
+  format: string;
+  width: number;
+  height: number;
 }
 
 export class UploadService {
   /**
-   * Upload a file to Supabase Storage
+   * Upload a file to Cloudinary using upload_stream
+   * Incorporates safety and performance optimizations:
+   * - f_auto: Automatically serves the best format (WebP/AVIF)
+   * - q_auto: Automatically optimizes quality
+   * - limit: Resizes if image is too large (prevents serving massive raw images)
    */
   async uploadFile(
-    bucket: string,
-    filePath: string,
+    folder: string,
     fileBuffer: Buffer,
-    contentType: string
+    fileName: string, // Used for public_id context (optional)
   ): Promise<UploadResult> {
-    const { data, error } = await supabaseAdmin.storage
-      .from(bucket)
-      .upload(filePath, fileBuffer, {
-        contentType,
-        upsert: true,
-      });
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: `menux/${folder}`,
+          public_id: fileName
+            .replace(/\.[^/.]+$/, "")
+            .replace(/[^a-zA-Z0-9]/g, "_"), // Sanitize public_id
+          resource_type: "image",
+          transformation: [
+            { width: 2000, height: 2000, crop: "limit" }, // Optimize max dimensions
+            { quality: "auto", fetch_format: "auto" }, // Optimize quality and format
+          ],
+          // Pre-generate a smaller variant to avoid slow first fetches
+          eager: [
+            {
+              width: 800,
+              height: 800,
+              crop: "limit",
+              quality: "auto",
+              fetch_format: "auto",
+            },
+          ],
+        },
+        (error, result) => {
+          if (error) {
+            console.error("Cloudinary upload error:", error);
+            return reject(new Error("Image upload failed"));
+          }
 
-    if (error) {
-      throw new Error(`Upload failed: ${error.message}`);
-    }
+          if (!result) {
+            return reject(new Error("Image upload failed - no result"));
+          }
 
-    // Get public URL
-    const { data: urlData } = supabaseAdmin.storage
-      .from(bucket)
-      .getPublicUrl(data.path);
+          resolve({
+            url: result.secure_url,
+            publicId: result.public_id,
+            format: result.format,
+            width: result.width,
+            height: result.height,
+          });
+        },
+      );
 
-    return {
-      url: urlData.publicUrl,
-      path: data.path,
-    };
+      // Convert buffer to stream and pipe to Cloudinary
+      const stream = Readable.from(fileBuffer);
+      stream.pipe(uploadStream);
+    });
   }
 
   /**
-   * Delete a file from Supabase Storage
+   * Delete a file from Cloudinary
    */
-  async deleteFile(bucket: string, filePath: string): Promise<boolean> {
-    const { error } = await supabaseAdmin.storage
-      .from(bucket)
-      .remove([filePath]);
-
-    if (error) {
-      console.error('Delete file error:', error);
+  async deleteFile(publicId: string): Promise<boolean> {
+    try {
+      const result = await cloudinary.uploader.destroy(publicId);
+      return result.result === "ok";
+    } catch (error) {
+      console.error("Cloudinary delete error:", error);
       return false;
     }
-
-    return true;
   }
 
   /**
-   * Generate a unique file path for upload
+   * Generate a unique filename context (optional since Cloudinary handles uniqueness,
+   * but good for organization)
    */
-  generateFilePath(userId: string, originalName: string): string {
+  generateFileName(userId: string, originalName: string): string {
     const timestamp = Date.now();
-    const sanitizedName = originalName.replace(/[^a-zA-Z0-9.-]/g, '_');
-    return `${userId}/${timestamp}-${sanitizedName}`;
+    const sanitizedName = originalName.replace(/[^a-zA-Z0-9.-]/g, "_");
+    return `${userId}_${timestamp}_${sanitizedName}`;
+  }
+
+  /**
+   * Upload a file from a remote URL
+   */
+  async uploadFileFromUrl(
+    folder: string,
+    url: string,
+    fileName: string,
+  ): Promise<UploadResult> {
+    return new Promise((resolve, reject) => {
+      cloudinary.uploader.upload(
+        url,
+        {
+          folder: `menux/${folder}`,
+          public_id: fileName
+            .replace(/\.[^/.]+$/, "")
+            .replace(/[^a-zA-Z0-9]/g, "_"),
+          resource_type: "image",
+          transformation: [
+            { width: 2000, height: 2000, crop: "limit" },
+            { quality: "auto", fetch_format: "auto" },
+          ],
+          eager: [
+            {
+              width: 800,
+              height: 800,
+              crop: "limit",
+              quality: "auto",
+              fetch_format: "auto",
+            },
+          ],
+        },
+        (error, result) => {
+          if (error) {
+            console.error("Cloudinary URL upload error:", error);
+            return reject(new Error("Failed to upload image from URL"));
+          }
+
+          if (!result) {
+            return reject(new Error("Image upload failed - no result"));
+          }
+
+          resolve({
+            url: result.secure_url,
+            publicId: result.public_id,
+            format: result.format,
+            width: result.width,
+            height: result.height,
+          });
+        },
+      );
+    });
   }
 }
 

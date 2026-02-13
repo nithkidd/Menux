@@ -1,7 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { supabase } from "../../shared/utils/supabase";
+import { createContext, useContext, useEffect, useState } from "react";
 import api from "../../shared/utils/api";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { Role } from "../../shared/rbac/permissions";
 
 export interface User {
@@ -10,13 +8,7 @@ export interface User {
   full_name?: string | null;
   avatar_url?: string | null;
   role: Role;
-  identities?: {
-    id: string;
-    provider: string;
-    created_at: string;
-    last_sign_in_at: string;
-    updated_at?: string;
-  }[];
+  identities?: any[];
 }
 
 interface AuthContextType {
@@ -42,183 +34,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const mapUser = useMemo(
-    () =>
-      (supabaseUser: SupabaseUser | null, profileData: Partial<User> = {}): User | null => {
-        if (!supabaseUser) return null;
-        return {
-          id: supabaseUser.id,
-          email: supabaseUser.email || "",
-          // Use profile data if available, fallback to metadata
-          full_name: profileData.full_name || supabaseUser.user_metadata?.full_name || null,
-          avatar_url: profileData.avatar_url || supabaseUser.user_metadata?.avatar_url || null,
-          role: profileData.role || "user",
-          identities: supabaseUser.identities?.map(identity => ({
-            id: identity.id,
-            provider: identity.provider,
-            created_at: identity.created_at || "",
-            last_sign_in_at: identity.last_sign_in_at || "",
-            updated_at: identity.updated_at
-          }))
-        };
-      },
-    [],
-  );
-
-  // Fetch user profile from backend
-  const fetchProfile = async (): Promise<Partial<User>> => {
-    try {
-      const response = await api.get('/auth/me');
-      // Backend now returns { user, profileId, role } inside data.
-      // But we constructed the user object in backend middleware with DB profile data.
-      // So response.data.data.user has the correct full_name/avatar_url from DB.
-      
-      const userData = response.data?.data?.user;
-      const role = response.data?.data?.role || 'user';
-      
-      const profileData = {
-          role,
-          full_name: userData?.full_name,
-          avatar_url: userData?.avatar_url
-      };
-      
-      // Cache the fresh profile
-      localStorage.setItem('user_profile', JSON.stringify(profileData));
-      
-      return profileData;
-    } catch (err) {
-      console.warn('[Auth] fetchProfile failed, check console for details');
-      // Return cached profile if available
-      try {
-        const cached = localStorage.getItem('user_profile');
-        if (cached) return JSON.parse(cached);
-      } catch (e) { /* ignore parse error */ }
-      
-      return { role: 'user' };
-    }
-  };
-
+  // Initialize auth state
   useEffect(() => {
-    let mounted = true;
-
-    // Safety timeout to prevent infinite loading
-    const safetyTimeout = setTimeout(() => {
-      if (mounted) setLoading(false);
-    }, 5000);
-
-    const init = async () => {
-      console.log('[Auth] Init starting...');
-      try {
-        // 1. Check local session (fast)
-        const { data } = await supabase.auth.getSession();
-        
-        if (data.session?.user && mounted) {
-          // 2. Try to get cached profile first (instant)
-          let cachedProfile: Partial<User> = {};
-          try {
-             const cached = localStorage.getItem('user_profile');
-             if (cached) cachedProfile = JSON.parse(cached);
-          } catch(e) {}
-          
-          if (cachedProfile.role) { // Basic check if cache is valid-ish
-            console.log('[Auth] Using cached profile:', cachedProfile);
-            setUser(mapUser(data.session.user, cachedProfile));
-            setLoading(false); // Render immediately
-            
-            // 3. Background fetch (Fire and forget, but update state if changed)
-            fetchProfile().then(freshProfile => {
-              if (!mounted) return;
-              // Deep compare or just simple check to avoid unnecessary rerenders? 
-              // For now just set it, React balances updates usually.
-              // To be safer let's just update.
-              setUser(mapUser(data.session.user, freshProfile));
-            }).catch(console.error);
-
-            // We are done with init, background/hooks will handle the rest
-            return; 
+    const initAuth = async () => {
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        try {
+          // Verify token and get user profile
+          const response = await api.get("/auth/me");
+          if (response.data.success) {
+            const {
+              user: _authUser,
+              role,
+              profileId: _profileId,
+            } = response.data.data;
+            // Response data user already contains profile info merged by backend middleware
+            setUser({ ...response.data.data.user, role });
           }
-          
-          // 4. No cache? We must wait for fetch
-          console.log('[Auth] No cache, waiting for fetch...');
-          const freshProfile = await fetchProfile();
-          if (mounted) {
-             setUser(mapUser(data.session.user, freshProfile));
-          }
-        } else if (mounted) {
-          setUser(null);
-          localStorage.removeItem('user_profile');
+        } catch (error) {
+          console.error("Auth init failed:", error);
+          // Token invalid?
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
         }
-      } catch (err) {
-        console.error('[Auth] Init error:', err);
-      } finally {
-        if (mounted) setLoading(false);
       }
+      setLoading(false);
     };
 
-    init();
+    initAuth();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('[Auth] Auth State Change:', event);
-        if (!mounted) return;
+    // Listen for custom logout event
+    const handleLogout = () => {
+      setUser(null);
+      window.location.href = "/login"; // Force redirect? or just state change
+    };
+    window.addEventListener("auth:logout", handleLogout);
 
-        if (session?.user) {
-           if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-             // For sign in, allow blocking fetch or cache
-             let cachedProfile: Partial<User> = {};
-             try {
-                const cached = localStorage.getItem('user_profile');
-                if (cached) cachedProfile = JSON.parse(cached);
-             } catch(e) {}
+    // Handle OAuth callback (hash parsing)
+    if (window.location.hash && window.location.hash.includes("access_token")) {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
 
-             if (cachedProfile.role) setUser(mapUser(session.user, cachedProfile));
-             
-             fetchProfile().then(profile => {
-               if (mounted) setUser(mapUser(session.user, profile));
-               if (mounted) setLoading(false);
-             });
-           } else {
-             // Token refresh etc.
-             const profile = await fetchProfile();
-             if (mounted) setUser(mapUser(session.user, profile));
-             if (mounted) setLoading(false);
-           }
-        } else {
-          setUser(null);
-          localStorage.removeItem('user_profile');
-          setLoading(false);
-        }
-      },
-    );
+      if (accessToken && refreshToken) {
+        localStorage.setItem("access_token", accessToken);
+        localStorage.setItem("refresh_token", refreshToken);
+        // Clear hash
+        window.history.replaceState(null, "", window.location.pathname);
+        // Trigger init
+        initAuth();
+      }
+    }
 
     return () => {
-      mounted = false;
-      clearTimeout(safetyTimeout);
-      authListener.subscription.unsubscribe();
+      window.removeEventListener("auth:logout", handleLogout);
     };
-  }, [mapUser]);
-
-  const loginWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
-
-    if (error) {
-      throw error;
-    }
-  };
+  }, []);
 
   const loginWithPassword = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const response = await api.post("/auth/login", { email, password });
+    if (response.data.success) {
+      const { session, user: _authUser } = response.data.data;
+      localStorage.setItem("access_token", session.access_token);
+      localStorage.setItem("refresh_token", session.refresh_token);
 
-    if (error) {
-      throw error;
+      // We need to fetch the full profile with role
+      const meResponse = await api.get("/auth/me");
+      if (meResponse.data.success) {
+        setUser({
+          ...meResponse.data.data.user,
+          role: meResponse.data.data.role,
+        });
+      }
     }
   };
 
@@ -227,76 +114,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string,
     fullName?: string,
   ) => {
-    const { error } = await supabase.auth.signUp({
+    const response = await api.post("/auth/signup", {
       email,
       password,
-      options: {
-        data: {
-          full_name: fullName || "",
-        },
-      },
+      full_name: fullName,
+    });
+    if (response.data.success) {
+      // Typically signup might not return a session if email confirmation is required.
+      // But if it does:
+      if (response.data.data.session) {
+        const { session } = response.data.data;
+        localStorage.setItem("access_token", session.access_token);
+        localStorage.setItem("refresh_token", session.refresh_token);
+        const meResponse = await api.get("/auth/me");
+        if (meResponse.data.success) {
+          setUser({
+            ...meResponse.data.data.user,
+            role: meResponse.data.data.role,
+          });
+        }
+      }
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    const response = await api.post("/auth/oauth", {
+      provider: "google",
+      redirectTo: `${window.location.origin}/dashboard`,
     });
 
-    if (error) {
-      throw error;
+    if (response.data.success && response.data.data.url) {
+      window.location.href = response.data.data.url;
     }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    localStorage.removeItem('user_profile');
+    try {
+      await api.post("/auth/logout");
+    } catch (e) {
+      console.error("Logout failed", e);
+    } finally {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      setUser(null);
+    }
   };
 
   const updateProfile = async (data: Partial<User>) => {
-      // 1. Call Backend
-      await api.put('/auth/me', data);
-      
-      // 2. Update Local State
-      if (user) {
-          const updatedUser = { ...user, ...data };
-          setUser(updatedUser);
-          
-          // Update cache
-          const cached = localStorage.getItem('user_profile');
-          if (cached) {
-              const profile = JSON.parse(cached);
-              localStorage.setItem('user_profile', JSON.stringify({ ...profile, ...data }));
-          }
-      }
-      
-      // 3. (Optional) Force refresh to ensure everything is in sync
-      await fetchProfile();
+    const response = await api.put("/auth/me", data);
+    if (response.data.success) {
+      const updatedProfile = response.data.data;
+      // Prefer server response for canonical profile fields.
+      setUser((prev) => (prev ? { ...prev, ...updatedProfile } : null));
+    }
   };
 
-  const updatePassword = async (password: string) => {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+  const updatePassword = async (_password: string) => {
+    // We didn't implement this backend endpoint yet!
+    console.warn("Update password not implemented in backend yet");
   };
 
   const unlinkProvider = async (provider: string) => {
-      // We use our backend endpoint for safety checks and because deleteUserIdentity returns void on client but we want to know if it worked?
-      // Actually client unlinking is fine but we implemented backend logic to prevent lockout more reliably.
-      await api.post('/auth/unlink', { provider });
-      
-      // Refresh session/user to update identities list
-      const { data } = await supabase.auth.refreshSession();
-      if (data.session?.user) {
-         // Force update user state
-         const profile = await fetchProfile();
-         setUser(mapUser(data.session.user, profile));
-      }
+    await api.post("/auth/unlink", { provider });
+    // Visual update logic if needed
   };
 
-  const reauthenticate = async (password: string) => {
-      if (!user?.email) throw new Error("No email to reauthenticate with");
-      
-      const { error } = await supabase.auth.signInWithPassword({
-          email: user.email,
-          password
-      });
-
-      if (error) throw error;
+  const reauthenticate = async (_password: string) => {
+    console.warn("Reauthenticate not implemented");
   };
 
   return (

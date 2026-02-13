@@ -66,14 +66,21 @@ export const verifyAuth = async (
       }
     }
 
+    // Log metadata for debugging
+    console.log(`[Auth] User Metadata for ${authUser.email}:`, authUser.user_metadata);
+
+    const metadata = authUser.user_metadata || {};
+    const metaName = metadata.full_name || metadata.name || metadata.experiment_name || null;
+    const metaAvatar = metadata.avatar_url || metadata.picture || metadata.avatar || null;
+
     if (!profile) {
       const { data: createdProfile, error: createError } = await supabaseAdmin
         .from("profiles")
         .insert({
           auth_user_id: authUser.id,
           email: authUser.email || "",
-          full_name: authUser.user_metadata?.full_name || null,
-          avatar_url: authUser.user_metadata?.avatar_url || null,
+          full_name: metaName,
+          avatar_url: metaAvatar,
         })
         .select("id, auth_user_id, email, full_name, avatar_url, role")
         .single();
@@ -91,9 +98,10 @@ export const verifyAuth = async (
     const user: AuthUser = {
       id: authUser.id,
       email: authUser.email || "",
-      // Prioritize DB profile data over Supabase metadata
-      full_name: profile.full_name || authUser.user_metadata?.full_name || null,
-      avatar_url: profile.avatar_url || authUser.user_metadata?.avatar_url || null,
+      // Prioritize DB profile data over Supabase metadata, with robust fallbacks
+      full_name: profile.full_name || metaName || null,
+      avatar_url: profile.avatar_url || metaAvatar || null,
+      identities: authUser.identities,
     };
 
     (req as AuthRequest).user = user;

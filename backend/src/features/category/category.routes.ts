@@ -95,9 +95,6 @@ router.get('/business/:businessId/categories', can('read', 'category'), (req: Re
  *     responses:
  *       200:
  *         description: Categories reordered successfully
- *     responses:
- *       200:
- *         description: Categories reordered successfully
  */
 // Category-specific routes
 router.put('/categories/reorder', can('update', 'category'), (req: Request, res: Response) => 

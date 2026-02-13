@@ -4,6 +4,7 @@ export interface AuthUser {
   email: string;
   full_name?: string | null;
   avatar_url?: string | null;
+  identities?: any[]; // Supabase identity type
 }
 
 // Profile (extends auth user in database)

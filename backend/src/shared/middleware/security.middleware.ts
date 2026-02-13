@@ -23,12 +23,17 @@ export const securityHeaders = (_req: Request, res: Response, next: NextFunction
   // Referrer policy - don't leak referrer to other origins
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-  // Content Security Policy - basic protection for API
-  // Note: For an API, this is less critical than for serving HTML, 
-  // but good practice. Relaxed for dev.
+  // HTTP Strict Transport Security (HSTS)
+  // Enforce HTTPS for 1 year, include subdomains - Applied globally
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+
+  // Content Security Policy - Protection for API
+  // We strictly disable object-src and base-uri.
+  // We allow unsafe-inline for styles mainly for Swagger UI compatibility if needed, 
+  // but scripts are restricted to 'self'. 
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:;"
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
   );
   
   // CORS is handled by cors middleware, but Helmet sets Cross-Origin-Resource-Policy to same-origin by default

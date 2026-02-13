@@ -3,10 +3,12 @@ import { uploadService } from './upload.service.js';
 import { AuthRequest } from '../../shared/middleware/auth.middleware.js';
 import { ApiResponse } from '../../shared/types/index.js';
 
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+
 
 export class UploadController {
+  /**
+   * POST /upload/logo - Upload business logo
+   */
   /**
    * POST /upload/logo - Upload business logo
    */
@@ -21,26 +23,11 @@ export class UploadController {
         return;
       }
 
-      // Validate file type
-      if (!ALLOWED_TYPES.includes(file.mimetype)) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid file type. Allowed: JPEG, PNG, WebP, GIF',
-        } as ApiResponse);
-        return;
-      }
-
-      // Validate file size
-      if (file.size > MAX_SIZE) {
-        res.status(400).json({
-          success: false,
-          error: 'File too large. Maximum size: 5MB',
-        } as ApiResponse);
-        return;
-      }
-
-      const filePath = uploadService.generateFilePath(req.user.id, file.originalname);
-      const result = await uploadService.uploadFile('logos', filePath, file.buffer, file.mimetype);
+      // Metadata for the file
+      const fileName = uploadService.generateFileName(req.user.id, file.originalname);
+      
+      // Upload to 'logos' folder in Cloudinary
+      const result = await uploadService.uploadFile('logos', file.buffer, fileName);
 
       res.json({
         success: true,
@@ -70,26 +57,11 @@ export class UploadController {
         return;
       }
 
-      // Validate file type
-      if (!ALLOWED_TYPES.includes(file.mimetype)) {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid file type. Allowed: JPEG, PNG, WebP, GIF',
-        } as ApiResponse);
-        return;
-      }
+      // Metadata for the file
+      const fileName = uploadService.generateFileName(req.user.id, file.originalname);
 
-      // Validate file size
-      if (file.size > MAX_SIZE) {
-        res.status(400).json({
-          success: false,
-          error: 'File too large. Maximum size: 5MB',
-        } as ApiResponse);
-        return;
-      }
-
-      const filePath = uploadService.generateFilePath(req.user.id, file.originalname);
-      const result = await uploadService.uploadFile('menu-images', filePath, file.buffer, file.mimetype);
+      // Upload to 'menu-images' folder in Cloudinary
+      const result = await uploadService.uploadFile('menu-images', file.buffer, fileName);
 
       res.json({
         success: true,
@@ -104,6 +76,95 @@ export class UploadController {
       } as ApiResponse);
     }
   }
-}
+  /**
+   * DELETE /upload/:publicId - Delete an uploaded image
+   */
+  async deleteImage(req: AuthRequest, res: Response): Promise<void> {
+      try {
+        // Support both named param and regex capture group
+        const publicId = (req.params.publicId || req.params[0]) as string;
+        
+        if (!publicId) {
+          res.status(400).json({
+            success: false,
+            error: 'No public ID provided',
+          } as ApiResponse);
+          return;
+        }
+  
+        // In a real app, you might want to verify that the user owns this image
+        // For now, we rely on the generic 'user'/'admin' role check
+  
+        const success = await uploadService.deleteFile(publicId);
+  
+        if (!success) {
+           res.status(500).json({
+            success: false,
+            error: 'Failed to delete image from storage',
+          } as ApiResponse);
+          return;
+        }
+  
+        res.json({
+          success: true,
+          message: 'Image deleted successfully',
+        } as ApiResponse);
+      } catch (error) {
+        console.error('Delete image error:', error);
+        res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to delete image',
+        } as ApiResponse);
+      }
+    }
+
+  /**
+   * POST /upload/url - Upload image from URL
+   */
+  async uploadImageFromUrl(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { url } = req.body;
+      
+      if (!url) {
+        res.status(400).json({
+          success: false,
+          error: 'No URL provided',
+        } as ApiResponse);
+        return;
+      }
+
+      // Basic URL validation
+      try {
+        new URL(url);
+      } catch (error) {
+        res.status(400).json({
+           success: false,
+           error: 'Invalid URL format',
+        } as ApiResponse);
+        return;
+      }
+
+      // Metadata
+      // For URL uploads, we might not have a filename, so generate one
+      const fileName = uploadService.generateFileName(req.user.id, 'url_upload');
+
+      // Upload to 'menu-images' folder
+      const result = await uploadService.uploadFileFromUrl('menu-images', url, fileName);
+
+      res.json({
+        success: true,
+        data: result,
+        message: 'Image uploaded successfully from URL',
+      } as ApiResponse);
+
+    } catch (error) {
+       console.error('Upload from URL error:', error);
+       res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to upload image from URL',
+      } as ApiResponse);
+    }
+  }
+  }
 
 export const uploadController = new UploadController();

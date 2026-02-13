@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Link, useParams } from 'react-router-dom';
 import { businessService, type Business } from '../../business/services/business.service';
 import { ArrowLeft, ExternalLink } from 'lucide-react';

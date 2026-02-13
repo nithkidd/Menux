@@ -61,8 +61,15 @@ export default function PublicMenu() {
       setLoading(true);
       const menuData = await publicMenuService.getMenuBySlug(slug);
       setData(menuData);
-    } catch (err) {
-      setError('Failed to load menu. It might not exist.');
+    } catch (err: any) {
+      console.error('Failed to load menu:', err);
+      if (err.response?.status === 404) {
+          setError('Menu not found. Please check the URL or ensure the business is published.');
+      } else if (err.code === 'ERR_NETWORK') {
+          setError('Unable to connect to the server. Please try again later.');
+      } else {
+          setError('Failed to load menu. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -240,19 +247,29 @@ export default function PublicMenu() {
 
       {/* Hero / Banner Area */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="relative rounded-2xl overflow-hidden bg-stone-900 h-48 sm:h-64 flex items-center justify-center text-center">
-            <div className="absolute inset-0 bg-gradient-to-r from-orange-900 to-stone-900 opacity-90"></div>
-            <div className="relative z-10 px-6 max-w-2xl">
-                 <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-2 tracking-tight">
-                    {business.name}
-                 </h2>
-                 {business.description && (
-                    <p className="text-orange-100 text-lg sm:text-lg opacity-90">
-                        {business.description}
-                    </p>
-                 )}
+        {business.cover_image_url ? (
+            <div className="w-full rounded-2xl overflow-hidden bg-stone-100 shadow-sm relative h-48 sm:h-64 md:h-80">
+                 <img 
+                    src={business.cover_image_url} 
+                    alt={business.name} 
+                    className="w-full h-full object-cover"
+                />
             </div>
-        </div>
+        ) : (
+            <div className="relative rounded-2xl overflow-hidden bg-stone-900 h-48 sm:h-64 flex items-center justify-center text-center">
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-900 to-stone-900 opacity-90"></div>
+                <div className="relative z-10 px-6 max-w-2xl">
+                    <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-2 tracking-tight">
+                        {business.name}
+                    </h2>
+                    {business.description && (
+                        <p className="text-orange-100 text-lg sm:text-lg opacity-90">
+                            {business.description}
+                        </p>
+                    )}
+                </div>
+            </div>
+        )}
       </div>
 
       {/* Dynamic Menu Template */}

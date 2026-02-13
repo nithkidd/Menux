@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { businessService, type Business } from '../services/business.service';
+// import { businessService, type Business } from '../services/business.service';
 import { menuService } from '../../menu/services/menu.service';
 import { Utensils, List, Eye, ArrowRight, Settings } from 'lucide-react';
 

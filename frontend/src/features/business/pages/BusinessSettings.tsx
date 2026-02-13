@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { businessService, type Business } from '../services/business.service';
 import { Loader2, Globe, Facebook, Instagram, Twitter, MapPin, Phone, Mail, DollarSign, Palette, Layout, Check, X } from 'lucide-react';
+import { ImageUpload } from '../../../shared/components/ImageUpload';
+import { menuService } from '../../menu/services/menu.service';
 
 export default function BusinessSettings() {
   const { businessId } = useParams<{ businessId: string }>();
@@ -341,36 +343,41 @@ export default function BusinessSettings() {
                         <div className="grid grid-cols-1 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Logo URL</label>
-                                <input
-                                    type="text"
-                                    name="logo_url"
-                                    value={formData.logo_url || ''}
-                                    onChange={handleChange}
-                                    placeholder="https://..."
-                                    className="w-full px-4 py-2 rounded-xl border-stone-200 dark:border-stone-700 dark:bg-stone-950 dark:text-white focus:ring-orange-500 focus:border-orange-500"
-                                />
-                                {formData.logo_url && (
-                                    <div className="mt-2 h-20 w-20 rounded-full overflow-hidden border border-stone-200 dark:border-stone-700">
-                                        <img src={formData.logo_url} alt="Logo Preview" className="h-full w-full object-cover" />
-                                    </div>
-                                )}
+                                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Logo URL</label>
+                                    <div className="w-32">
+                                    <ImageUpload
+                                        initialUrl={formData.logo_url}
+                                        onUpload={(url) => setFormData(prev => ({ ...prev, logo_url: url }))}
+                                        onRemove={async () => {
+                                            if (formData.logo_url) {
+                                                const publicId = menuService.getPublicIdFromUrl(formData.logo_url);
+                                                if (publicId) await menuService.deleteImage(publicId);
+                                                setFormData(prev => ({ ...prev, logo_url: null }));
+                                            }
+                                        }}
+                                        aspectRatio={1}
+                                        className="w-32 h-32 rounded-full overflow-hidden"
+                                    />
+                                </div>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Cover Image URL</label>
-                                <input
-                                    type="text"
-                                    name="cover_image_url"
-                                    value={formData.cover_image_url || ''}
-                                    onChange={handleChange}
-                                    placeholder="https://..."
-                                    className="w-full px-4 py-2 rounded-xl border-stone-200 dark:border-stone-700 dark:bg-stone-950 dark:text-white focus:ring-orange-500 focus:border-orange-500"
-                                />
-                                {formData.cover_image_url && (
-                                    <div className="mt-2 h-40 w-full rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700">
-                                        <img src={formData.cover_image_url} alt="Cover Preview" className="h-full w-full object-cover" />
-                                    </div>
-                                )}
+                                <div className="w-full">
+                                    <ImageUpload
+                                        initialUrl={formData.cover_image_url}
+                                        onUpload={(url) => setFormData(prev => ({ ...prev, cover_image_url: url }))}
+                                        onRemove={async () => {
+                                            if (formData.cover_image_url) {
+                                                const publicId = menuService.getPublicIdFromUrl(formData.cover_image_url);
+                                                if (publicId) await menuService.deleteImage(publicId);
+                                                setFormData(prev => ({ ...prev, cover_image_url: null }));
+                                            }
+                                        }}
+                                        aspectRatio={16/9}
+                                        className="w-full h-48 sm:h-64 rounded-xl overflow-hidden"
+                                    />
+                                </div>
                             </div>
                             
                             {/* Simple Color Field for now */}

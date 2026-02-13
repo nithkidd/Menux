@@ -92,4 +92,51 @@ router.put("/me", verifyAuth, authController.updateProfile);
 router.post("/unlink", verifyAuth, authController.unlinkProvider);
 
 
+// --- New Auth Routes ---
+
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Login with password
+ *     tags: [Auth]
+ */
+router.post("/login", authController.login);
+
+/**
+ * @swagger
+ * /auth/signup:
+ *   post:
+ *     summary: Signup with password
+ *     tags: [Auth]
+ */
+router.post("/signup", authController.signup);
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Logout
+ *     tags: [Auth]
+ */
+router.post("/logout", authController.logout);
+
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh session
+ *     tags: [Auth]
+ */
+router.post("/refresh", authController.refresh);
+
+/**
+ * @swagger
+ * /auth/oauth:
+ *   post:
+ *     summary: Get OAuth URL
+ *     tags: [Auth]
+ */
+router.post("/oauth", authController.oauth);
+
 export default router;
