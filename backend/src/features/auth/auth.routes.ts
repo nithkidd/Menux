@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as authController from "./auth.controller.js";
 import { verifyAuth } from "../../shared/middleware/auth.middleware.js";
+import { authLimiter } from "../../shared/middleware/rateLimit.middleware.js";
 
 const router = Router();
 
@@ -89,7 +90,7 @@ router.put("/me", verifyAuth, authController.updateProfile);
  *       200:
  *         description: Provider unlinked successfully
  */
-router.post("/unlink", verifyAuth, authController.unlinkProvider);
+router.post("/unlink", verifyAuth, authLimiter, authController.unlinkProvider);
 
 
 // --- New Auth Routes ---
@@ -100,8 +101,13 @@ router.post("/unlink", verifyAuth, authController.unlinkProvider);
  *   post:
  *     summary: Login with password
  *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       429:
+ *         description: Too many requests
  */
-router.post("/login", authController.login);
+router.post("/login", authLimiter, authController.login);
 
 /**
  * @swagger
@@ -109,8 +115,13 @@ router.post("/login", authController.login);
  *   post:
  *     summary: Signup with password
  *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Signup successful
+ *       429:
+ *         description: Too many requests
  */
-router.post("/signup", authController.signup);
+router.post("/signup", authLimiter, authController.signup);
 
 /**
  * @swagger
@@ -127,8 +138,13 @@ router.post("/logout", authController.logout);
  *   post:
  *     summary: Refresh session
  *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Session refreshed
+ *       429:
+ *         description: Too many requests
  */
-router.post("/refresh", authController.refresh);
+router.post("/refresh", authLimiter, authController.refresh);
 
 /**
  * @swagger
@@ -136,7 +152,12 @@ router.post("/refresh", authController.refresh);
  *   post:
  *     summary: Get OAuth URL
  *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: OAuth URL returned
+ *       429:
+ *         description: Too many requests
  */
-router.post("/oauth", authController.oauth);
+router.post("/oauth", authLimiter, authController.oauth);
 
 export default router;

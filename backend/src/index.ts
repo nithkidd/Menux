@@ -15,6 +15,10 @@ const PORT = process.env.PORT || 3001;
 // Security middleware (must be first)
 app.use(securityMiddleware);
 
+// Rate limiting
+import { apiLimiter } from './shared/middleware/rateLimit.middleware.js';
+app.use('/api', apiLimiter);
+
 // Middleware - extract just the origin (no paths) from FRONTEND_URL
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 const corsOrigin = new URL(frontendUrl).origin;
