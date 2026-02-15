@@ -1,5 +1,4 @@
-
-import rateLimit from 'express-rate-limit';
+import rateLimit from "express-rate-limit";
 
 // Strict limiter for authentication routes (login, signup, etc.)
 // 5 requests per 15 minutes to prevent brute-force attacks
@@ -10,7 +9,8 @@ export const authLimiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: {
     success: false,
-    error: 'Too many login attempts from this IP, please try again after 15 minutes',
+    error:
+      "Too many login attempts from this IP, please try again after 15 minutes",
   },
 });
 
@@ -23,6 +23,19 @@ export const apiLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     success: false,
-    error: 'Too many requests from this IP, please try again after 15 minutes',
+    error: "Too many requests from this IP, please try again after 15 minutes",
+  },
+});
+
+// Business creation limiter to mitigate automated bursts
+export const businessCreateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 5, // Limit each IP to 5 creates per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error:
+      "Too many business creation attempts from this IP, please try again later",
   },
 });

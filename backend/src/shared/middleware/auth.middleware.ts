@@ -17,9 +17,11 @@ export const verifyAuth = async (
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith("Bearer ")) {
-    return res
-      .status(401)
-      .json({ success: false, error: "Unauthorized: No token provided" });
+    return res.status(401).json({
+      success: false,
+      error: "Unauthorized: No token provided",
+      message: "Please sign in to continue.",
+    });
   }
 
   /* DEBUG LOGGING */
@@ -33,9 +35,11 @@ export const verifyAuth = async (
 
     if (authError || !authData?.user) {
       console.error("Auth Middleware: Invalid token", authError);
-      return res
-        .status(401)
-        .json({ success: false, error: "Unauthorized: Invalid token" });
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized: Invalid token",
+        message: "Your session is invalid or expired. Please sign in again.",
+      });
     }
 
     const authUser = authData.user;
@@ -67,11 +71,16 @@ export const verifyAuth = async (
     }
 
     // Log metadata for debugging
-    console.log(`[Auth] User Metadata for ${authUser.email}:`, authUser.user_metadata);
+    console.log(
+      `[Auth] User Metadata for ${authUser.email}:`,
+      authUser.user_metadata,
+    );
 
     const metadata = authUser.user_metadata || {};
-    const metaName = metadata.full_name || metadata.name || metadata.experiment_name || null;
-    const metaAvatar = metadata.avatar_url || metadata.picture || metadata.avatar || null;
+    const metaName =
+      metadata.full_name || metadata.name || metadata.experiment_name || null;
+    const metaAvatar =
+      metadata.avatar_url || metadata.picture || metadata.avatar || null;
 
     if (!profile) {
       const { data: createdProfile, error: createError } = await supabaseAdmin
@@ -87,9 +96,11 @@ export const verifyAuth = async (
 
       if (createError || !createdProfile) {
         console.error("Auth Middleware: Profile create error", createError);
-        return res
-          .status(500)
-          .json({ success: false, error: "Failed to initialize profile" });
+        return res.status(500).json({
+          success: false,
+          error: "Failed to initialize profile",
+          message: "Unable to initialize your profile right now.",
+        });
       }
 
       profile = createdProfile;
@@ -109,8 +120,10 @@ export const verifyAuth = async (
     (req as AuthRequest).role = profile.role || "user";
     next();
   } catch (err) {
-    return res
-      .status(500)
-      .json({ success: false, error: "Internal Server Error during auth" });
+    return res.status(500).json({
+      success: false,
+      error: "Internal Server Error during auth",
+      message: "Authentication failed due to a server error.",
+    });
   }
 };

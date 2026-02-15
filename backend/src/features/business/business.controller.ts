@@ -1,7 +1,12 @@
-import { Response } from 'express';
-import { businessService } from './business.service.js';
-import { AuthRequest } from '../../shared/middleware/auth.middleware.js';
-import { CreateBusinessDto, UpdateBusinessDto, ApiResponse, Business } from '../../shared/types/index.js';
+import { Response } from "express";
+import { businessService } from "./business.service.js";
+import { AuthRequest } from "../../shared/middleware/auth.middleware.js";
+import {
+  CreateBusinessDto,
+  UpdateBusinessDto,
+  ApiResponse,
+  Business,
+} from "../../shared/types/index.js";
 
 export class BusinessController {
   /**
@@ -15,13 +20,14 @@ export class BusinessController {
       res.status(201).json({
         success: true,
         data: business,
-        message: 'Business created successfully',
+        message: "Business created successfully",
       } as ApiResponse<Business>);
     } catch (error) {
-      console.error('Create business error:', error);
+      console.error("Create business error:", error);
       res.status(400).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create business',
+        error:
+          error instanceof Error ? error.message : "Failed to create business",
       } as ApiResponse);
     }
   }
@@ -34,10 +40,10 @@ export class BusinessController {
   async getAll(req: AuthRequest, res: Response): Promise<void> {
     try {
       let businesses: Business[];
-      
+
       const scope = req.query.scope as string;
-      
-      if (req.requiresOwnershipCheck || scope === 'own') {
+
+      if (req.requiresOwnershipCheck || scope === "own") {
         businesses = await businessService.getAllByOwner(req.profileId);
       } else {
         businesses = await businessService.getAll();
@@ -46,12 +52,18 @@ export class BusinessController {
       res.json({
         success: true,
         data: businesses,
+        ...(businesses.length === 0 && {
+          message:
+            req.requiresOwnershipCheck || scope === "own"
+              ? "You do not have any businesses yet."
+              : "No businesses found.",
+        }),
       } as ApiResponse<Business[]>);
     } catch (error) {
-      console.error('Get businesses error:', error);
+      console.error("Get businesses error:", error);
       res.status(500).json({
         success: false,
-        error: 'Failed to fetch businesses',
+        error: "Failed to fetch businesses",
       } as ApiResponse);
     }
   }
@@ -73,7 +85,7 @@ export class BusinessController {
       if (!business) {
         res.status(404).json({
           success: false,
-          error: 'Business not found',
+          error: "Business not found",
         } as ApiResponse);
         return;
       }
@@ -83,10 +95,10 @@ export class BusinessController {
         data: business,
       } as ApiResponse<Business>);
     } catch (error) {
-      console.error('Get business error:', error);
+      console.error("Get business error:", error);
       res.status(500).json({
         success: false,
-        error: 'Failed to fetch business',
+        error: "Failed to fetch business",
       } as ApiResponse);
     }
   }
@@ -109,7 +121,7 @@ export class BusinessController {
       if (!business) {
         res.status(404).json({
           success: false,
-          error: 'Business not found',
+          error: "Business not found",
         } as ApiResponse);
         return;
       }
@@ -117,13 +129,14 @@ export class BusinessController {
       res.json({
         success: true,
         data: business,
-        message: 'Business updated successfully',
+        message: "Business updated successfully",
       } as ApiResponse<Business>);
     } catch (error) {
-      console.error('Update business error:', error);
+      console.error("Update business error:", error);
       res.status(400).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update business',
+        error:
+          error instanceof Error ? error.message : "Failed to update business",
       } as ApiResponse);
     }
   }
@@ -145,20 +158,20 @@ export class BusinessController {
       if (!deleted) {
         res.status(404).json({
           success: false,
-          error: 'Business not found',
+          error: "Business not found",
         } as ApiResponse);
         return;
       }
 
       res.json({
         success: true,
-        message: 'Business deleted successfully',
+        message: "Business deleted successfully",
       } as ApiResponse);
     } catch (error) {
-      console.error('Delete business error:', error);
+      console.error("Delete business error:", error);
       res.status(500).json({
         success: false,
-        error: 'Failed to delete business',
+        error: "Failed to delete business",
       } as ApiResponse);
     }
   }

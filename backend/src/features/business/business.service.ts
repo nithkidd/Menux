@@ -1,17 +1,26 @@
-import { businessRepository } from './business.repository.js';
-import { generateSlug } from '../../shared/utils/slug.js';
-import { Business, CreateBusinessDto, UpdateBusinessDto } from '../../shared/types/index.js';
+import { businessRepository } from "./business.repository.js";
+import { generateSlug } from "../../shared/utils/slug.js";
+import {
+  Business,
+  CreateBusinessDto,
+  UpdateBusinessDto,
+} from "../../shared/types/index.js";
 
 export class BusinessService {
   /**
    * Create a new business with a unique slug
    */
   async create(profileId: string, dto: CreateBusinessDto): Promise<Business> {
+    const existingCount = await businessRepository.countByOwnerId(profileId);
+    if (existingCount >= 5) {
+      throw new Error("Business limit reached (max 5).");
+    }
+
     // Generate a unique slug
     let slug = generateSlug(dto.name);
     let attempts = 0;
-    
-    while (await businessRepository.slugExists(slug) && attempts < 10) {
+
+    while ((await businessRepository.slugExists(slug)) && attempts < 10) {
       const suffix = Math.random().toString(36).substring(2, 6);
       slug = `${generateSlug(dto.name)}-${suffix}`;
       attempts++;
@@ -27,7 +36,7 @@ export class BusinessService {
     });
 
     if (!business) {
-      throw new Error('Failed to create business');
+      throw new Error("Failed to create business");
     }
 
     return business;
@@ -57,7 +66,10 @@ export class BusinessService {
   /**
    * Update a business (admin - no ownership check)
    */
-  async updateAdmin(id: string, dto: UpdateBusinessDto): Promise<Business | null> {
+  async updateAdmin(
+    id: string,
+    dto: UpdateBusinessDto,
+  ): Promise<Business | null> {
     // Check existence first
     const existing = await businessRepository.findById(id);
     if (!existing) return null;
@@ -94,7 +106,7 @@ export class BusinessService {
   async update(
     id: string,
     profileId: string,
-    dto: UpdateBusinessDto
+    dto: UpdateBusinessDto,
   ): Promise<Business | null> {
     // Verify ownership first
     const existing = await businessRepository.findByIdAndOwner(id, profileId);
@@ -107,13 +119,15 @@ export class BusinessService {
       // Basic validation
       const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
       if (!slugRegex.test(dto.slug)) {
-        throw new Error('Invalid slug format. Use lowercase alphanumeric and hyphens only.');
+        throw new Error(
+          "Invalid slug format. Use lowercase alphanumeric and hyphens only.",
+        );
       }
-      
+
       // Check availability
       const taken = await businessRepository.slugExists(dto.slug);
       if (taken) {
-        throw new Error('Slug is already taken.');
+        throw new Error("Slug is already taken.");
       }
     }
 

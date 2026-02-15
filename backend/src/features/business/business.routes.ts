@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { businessController } from "./business.controller.js";
 import { AuthRequest } from "../../shared/middleware/auth.middleware.js";
 import { can } from "../../shared/middleware/rbac.middleware.js";
+import { businessCreateLimiter } from "../../shared/middleware/rateLimit.middleware.js";
 
 const router = Router();
 
@@ -61,8 +62,12 @@ const router = Router();
  *       201:
  *         description: Business created successfully
  */
-router.post("/", can("create", "business"), (req: Request, res: Response) =>
-  businessController.create(req as unknown as AuthRequest, res),
+router.post(
+  "/",
+  can("create", "business"),
+  businessCreateLimiter,
+  (req: Request, res: Response) =>
+    businessController.create(req as unknown as AuthRequest, res),
 );
 
 /**

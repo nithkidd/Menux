@@ -1,8 +1,8 @@
-import { supabaseAdmin } from '../../config/supabase.js';
-import { Business, UpdateBusinessDto } from '../../shared/types/index.js';
+import { supabaseAdmin } from "../../config/supabase.js";
+import { Business, UpdateBusinessDto } from "../../shared/types/index.js";
 
 export class BusinessRepository {
-  private table = 'businesses';
+  private table = "businesses";
 
   async create(data: {
     owner_id: string;
@@ -32,19 +32,29 @@ export class BusinessRepository {
   async findByOwnerId(ownerId: string): Promise<Business[]> {
     const { data, error } = await supabaseAdmin
       .from(this.table)
-      .select('*')
-      .eq('owner_id', ownerId)
-      .order('created_at', { ascending: false });
+      .select("*")
+      .eq("owner_id", ownerId)
+      .order("created_at", { ascending: false });
 
     if (error) throw new Error(error.message);
     return (data || []) as Business[];
   }
 
+  async countByOwnerId(ownerId: string): Promise<number> {
+    const { count, error } = await supabaseAdmin
+      .from(this.table)
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", ownerId);
+
+    if (error) throw new Error(error.message);
+    return count ?? 0;
+  }
+
   async findAll(): Promise<Business[]> {
     const { data, error } = await supabaseAdmin
       .from(this.table)
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (error) throw new Error(error.message);
     return (data || []) as Business[];
@@ -53,20 +63,23 @@ export class BusinessRepository {
   async findById(id: string): Promise<Business | null> {
     const { data, error } = await supabaseAdmin
       .from(this.table)
-      .select('*')
-      .eq('id', id)
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (error) return null;
     return data as Business;
   }
 
-  async findByIdAndOwner(id: string, ownerId: string): Promise<Business | null> {
+  async findByIdAndOwner(
+    id: string,
+    ownerId: string,
+  ): Promise<Business | null> {
     const { data, error } = await supabaseAdmin
       .from(this.table)
-      .select('*')
-      .eq('id', id)
-      .eq('owner_id', ownerId)
+      .select("*")
+      .eq("id", id)
+      .eq("owner_id", ownerId)
       .single();
 
     if (error) return null;
@@ -76,24 +89,27 @@ export class BusinessRepository {
   async findBySlug(slug: string): Promise<Business | null> {
     const { data, error } = await supabaseAdmin
       .from(this.table)
-      .select('*')
-      .eq('slug', slug)
-      .eq('is_active', true)
-      .eq('is_published', true)
+      .select("*")
+      .eq("slug", slug)
+      .eq("is_active", true)
+      .eq("is_published", true)
       .single();
 
     if (error) return null;
     return data as Business;
   }
 
-  async update(id: string, updates: UpdateBusinessDto): Promise<Business | null> {
+  async update(
+    id: string,
+    updates: UpdateBusinessDto,
+  ): Promise<Business | null> {
     const { data, error } = await supabaseAdmin
       .from(this.table)
       .update({
         ...updates,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -105,8 +121,8 @@ export class BusinessRepository {
     const { error } = await supabaseAdmin
       .from(this.table)
       .delete()
-      .eq('id', id)
-      .eq('owner_id', ownerId);
+      .eq("id", id)
+      .eq("owner_id", ownerId);
 
     if (error) throw new Error(error.message);
     return true;
@@ -116,7 +132,7 @@ export class BusinessRepository {
     const { error } = await supabaseAdmin
       .from(this.table)
       .delete()
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) throw new Error(error.message);
     return true;
@@ -125,8 +141,8 @@ export class BusinessRepository {
   async slugExists(slug: string): Promise<boolean> {
     const { data } = await supabaseAdmin
       .from(this.table)
-      .select('id')
-      .eq('slug', slug)
+      .select("id")
+      .eq("slug", slug)
       .single();
 
     return !!data;
