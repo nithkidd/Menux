@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth.context";
 import PageTransition from "../../../shared/components/PageTransition";
 import { Eye, EyeOff } from "lucide-react";
@@ -12,6 +12,7 @@ export default function Login() {
     loginWithPassword,
     signupWithPassword,
   } = useAuth();
+  const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -19,6 +20,13 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const mode = searchParams.get("mode");
+    if (mode === "signup") {
+      setIsLogin(false);
+    }
+  }, [searchParams]);
 
   const handleGoogleSignIn = async () => {
     setError("");
@@ -55,40 +63,40 @@ export default function Login() {
   return (
     <>
       {authLoading ? (
-        <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="flex h-[calc(100vh-4rem)] items-center justify-center dark:text-white">
           Loading...
         </div>
       ) : user ? (
         <Navigate to="/" replace />
       ) : (
         <PageTransition>
-            <div className="flex flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
+            <div className="flex flex-col items-center justify-center py-12 sm:px-6 lg:px-8 bg-stone-50 dark:bg-stone-900 min-h-[calc(100vh-4rem)]">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-stone-900">
+                <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-stone-900 dark:text-white">
                     {isLogin
                     ? "Sign in to MenuX"
                     : "Create your MenuX account"}
                 </h2>
-                <p className="mt-2 text-center text-sm text-stone-600">
+                <p className="mt-2 text-center text-sm text-stone-600 dark:text-stone-400">
                     Use email and password or continue with Google.
                 </p>
             </div>
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow-sm sm:rounded-2xl sm:px-10 border border-stone-200">
+                <div className="bg-white py-8 px-4 shadow-sm sm:rounded-2xl sm:px-10 border border-stone-200 dark:bg-stone-800 dark:border-stone-700">
                 <form className="space-y-6" onSubmit={handleEmailAuth}>
                     {error && (
-                    <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded-lg">{error}</div>
+                    <div className="text-red-500 text-sm text-center bg-red-50 dark:bg-red-900/20 dark:text-red-400 p-2 rounded-lg">{error}</div>
                     )}
 
                     <div className="space-y-4">
                     {!isLogin && (
                         <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-stone-700">Full Name</label>
+                        <label htmlFor="name" className="block text-sm font-medium text-stone-700 dark:text-stone-300">Full Name</label>
                         <input
                             id="name"
                             type="text"
-                            className="mt-1 block w-full rounded-xl border-stone-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm py-2 px-3 border"
+                            className="mt-1 block w-full rounded-xl border-stone-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm py-2 px-3 border dark:bg-stone-700 dark:border-stone-600 dark:text-white dark:placeholder-stone-400"
                             placeholder="John Doe"
                             value={fullName}
                             onChange={(e) => setFullName(e.target.value)}
@@ -96,32 +104,32 @@ export default function Login() {
                         </div>
                     )}
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-stone-700">Email address</label>
+                        <label htmlFor="email" className="block text-sm font-medium text-stone-700 dark:text-stone-300">Email address</label>
                         <input
                         id="email"
                         type="email"
                         required
-                        className="mt-1 block w-full rounded-xl border-stone-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm py-2 px-3 border"
+                        className="mt-1 block w-full rounded-xl border-stone-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm py-2 px-3 border dark:bg-stone-700 dark:border-stone-600 dark:text-white dark:placeholder-stone-400"
                         placeholder="you@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
                     <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-stone-700">Password</label>
+                        <label htmlFor="password" className="block text-sm font-medium text-stone-700 dark:text-stone-300">Password</label>
                         <div className="relative mt-1">
                           <input
                             id="password"
                             type={showPassword ? "text" : "password"}
                             required
-                            className="block w-full rounded-xl border-stone-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm py-2 pl-3 pr-10 border"
+                            className="block w-full rounded-xl border-stone-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm py-2 pl-3 pr-10 border dark:bg-stone-700 dark:border-stone-600 dark:text-white dark:placeholder-stone-400"
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                           />
                           <button
                             type="button"
-                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-stone-400 hover:text-stone-600 focus:outline-none"
+                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300 focus:outline-none"
                             onClick={() => setShowPassword(!showPassword)}
                           >
                             {showPassword ? (
@@ -137,7 +145,7 @@ export default function Login() {
                     <button
                     type="submit"
                     disabled={loading}
-                    className="flex w-full justify-center rounded-2xl border border-transparent bg-stone-900 py-2.5 px-4 text-sm font-bold text-white shadow-sm hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-70 transition-all btn-press"
+                    className="flex w-full justify-center rounded-2xl border border-transparent bg-stone-900 py-2.5 px-4 text-sm font-bold text-white shadow-sm hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-70 transition-all btn-press dark:bg-white dark:text-stone-900 dark:hover:bg-stone-100 dark:focus:ring-offset-stone-800"
                     >
                     {isLogin ? "Sign in" : "Create account"}
                     </button>
@@ -145,7 +153,7 @@ export default function Login() {
                     <div className="text-center text-sm">
                     <button
                         type="button"
-                        className="font-medium text-orange-600 hover:text-orange-500"
+                        className="font-medium text-orange-600 hover:text-orange-500 dark:text-orange-400 dark:hover:text-orange-300"
                         onClick={() => setIsLogin(!isLogin)}
                     >
                         {isLogin
@@ -158,17 +166,17 @@ export default function Login() {
                 <div className="mt-6">
                     <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-stone-200" />
+                        <div className="w-full border-t border-stone-200 dark:border-stone-700" />
                     </div>
                     <div className="relative flex justify-center text-sm">
-                        <span className="bg-white px-2 text-stone-500">Or continue with</span>
+                        <span className="bg-white px-2 text-stone-500 dark:bg-stone-800 dark:text-stone-400">Or continue with</span>
                     </div>
                     </div>
 
                     <div className="mt-6">
                     <button
                         onClick={handleGoogleSignIn}
-                        className="flex w-full justify-center rounded-2xl border border-stone-300 bg-white py-2.5 px-4 text-sm font-bold text-stone-700 shadow-sm hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all btn-press"
+                        className="flex w-full justify-center items-center rounded-2xl border border-stone-300 bg-white py-2.5 px-4 text-sm font-bold text-stone-700 shadow-sm hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all btn-press dark:bg-stone-700 dark:border-stone-600 dark:text-white dark:hover:bg-stone-600 dark:focus:ring-offset-stone-800"
                     >
                         <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
                             <path

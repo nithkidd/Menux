@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Zap, BarChart3, Smartphone, Menu, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Zap, BarChart3, ArrowRight, CheckCircle2 } from 'lucide-react';
 import PageTransition from '../../../shared/components/PageTransition';
 
 // Navbar and Footer are now in shared/components and rendered by MainLayout
@@ -24,7 +24,7 @@ const Hero = () => (
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
-            to="/dashboard/create-business"
+            to="/login?mode=signup"
             className="w-full sm:w-auto px-8 py-4 bg-orange-600 hover:bg-orange-700 text-white rounded-2xl font-bold text-lg transition-all shadow-lg flex items-center justify-center gap-2 btn-press"
           >
             Create Menu Free <ArrowRight className="w-5 h-5" />
@@ -39,18 +39,11 @@ const Hero = () => (
       <div className="relative mx-auto mt-16 max-w-5xl">
         <div className="absolute inset-0 bg-gradient-to-t from-stone-50 to-transparent z-10 h-24 bottom-0 w-full" />
         <div className="relative rounded-3xl overflow-hidden shadow-2xl border-8 border-stone-900 bg-stone-800 aspect-[16/9] md:aspect-[21/9] transform rotate-1 hover:rotate-0 transition-all duration-700 ease-out">
-            <div className="absolute inset-0 flex items-center justify-center bg-stone-100">
-                <div className="text-center">
-                    <Smartphone className="w-16 h-16 text-stone-300 mx-auto mb-4" />
-                    <p className="text-stone-400 font-medium">Interactive Menu Preview</p>
-                </div>
-            </div>
-             {/* Simulated Screen Content - could be an image or iframe later */}
-             <div className="absolute top-0 left-0 w-full h-12 bg-stone-900 flex items-center px-4 space-x-2">
-                <div className="w-3 h-3 rounded-full bg-red-500"/>
-                <div className="w-3 h-3 rounded-full bg-yellow-500"/>
-                <div className="w-3 h-3 rounded-full bg-green-500"/>
-             </div>
+            <iframe 
+                src="/menu/demo-restaurant" 
+                className="w-full h-full border-0"
+                title="Interactive Menu Preview"
+            />
         </div>
       </div>
     </div>
@@ -129,10 +122,11 @@ const DemoSection = () => (
                      {/* Abstract representation of "Editor" vs "Customer" view */}
                     <div className="relative z-10 bg-white rounded-3xl p-2 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500">
                         <div className="bg-stone-100 rounded-2xl overflow-hidden aspect-[9/16] relative border-4 border-stone-200">
-                             <div className="absolute inset-0 flex flex-col items-center justify-center text-stone-300">
-                                 <Menu className="w-12 h-12 mb-2" />
-                                 <span className="font-mono text-xs">CUSTOMER VIEW</span>
-                             </div>
+                             <iframe 
+                                src="/menu/demo-restaurant" 
+                                className="w-full h-full border-0"
+                                title="Customer View Demo"
+                            />
                         </div>
                     </div>
                 </div>
@@ -161,7 +155,7 @@ const Pricing = () => (
                 <li className="flex items-center gap-3 text-stone-600 dark:text-stone-300"><CheckCircle2 size={18} className="text-orange-500" /> Unlimited Menu Items</li>
                 <li className="flex items-center gap-3 text-stone-600 dark:text-stone-300"><CheckCircle2 size={18} className="text-orange-500" /> Basic QR Code</li>
             </ul>
-             <Link to="/dashboard/create-business" className="w-full py-3 rounded-xl border-2 border-stone-200 dark:border-stone-700 text-stone-900 dark:text-white font-bold hover:border-orange-500 hover:text-orange-600 dark:hover:border-orange-500 dark:hover:text-orange-500 transition-colors text-center">Get Started</Link>
+             <Link to="/login?mode=signup" className="w-full py-3 rounded-xl border-2 border-stone-200 dark:border-stone-700 text-stone-900 dark:text-white font-bold hover:border-orange-500 hover:text-orange-600 dark:hover:border-orange-500 dark:hover:text-orange-500 transition-colors text-center">Get Started</Link>
         </div>
         {/* Pro Plan */}
         <div className="bg-stone-900 dark:bg-stone-800 p-8 rounded-3xl shadow-xl flex flex-col relative overflow-hidden ring-1 ring-stone-900/5 dark:ring-stone-700">
