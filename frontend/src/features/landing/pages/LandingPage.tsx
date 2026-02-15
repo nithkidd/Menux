@@ -37,7 +37,6 @@ const Hero = () => (
 
       {/* 3D Mockup Placeholder */}
       <div className="relative mx-auto mt-16 max-w-5xl">
-        <div className="absolute inset-0 bg-gradient-to-t from-stone-50 to-transparent z-10 h-24 bottom-0 w-full" />
         <div className="relative rounded-3xl overflow-hidden shadow-2xl border-8 border-stone-900 bg-stone-800 aspect-[16/9] md:aspect-[21/9] transform rotate-1 hover:rotate-0 transition-all duration-700 ease-out">
             <iframe 
                 src="/menu/demo-restaurant" 
