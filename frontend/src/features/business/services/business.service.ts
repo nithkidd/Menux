@@ -42,5 +42,9 @@ export const businessService = {
   update: async (id: string, data: Partial<Business>) => {
     const response = await api.put<{ success: boolean; data: Business }>(`/business/${id}`, data);
     return response.data.data;
-  }
+  },
+
+  delete: async (id: string) => {
+    await api.delete(`/business/${id}`);
+  },
 };

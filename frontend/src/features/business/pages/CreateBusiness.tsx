@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { businessService } from '../services/business.service';
-import { ChevronRight, ArrowLeft } from 'lucide-react';
+import { ChevronRight, ArrowLeft, AlertCircle } from 'lucide-react';
 import PageTransition from '../../../shared/components/PageTransition';
 
 export default function CreateBusiness() {
@@ -15,6 +15,12 @@ export default function CreateBusiness() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (name.trim().length < 3) {
+      setError('Business name must be at least 3 characters long');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -60,6 +66,12 @@ export default function CreateBusiness() {
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
             <div className="bg-white dark:bg-stone-900 py-8 px-4 shadow-sm sm:rounded-3xl sm:px-10 border border-stone-200 dark:border-stone-800">
+            {error && (
+                <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 flex items-center gap-3 text-red-700 dark:text-red-400 text-sm animate-fade-in-up">
+                    <AlertCircle size={20} />
+                    <p>{error}</p>
+                </div>
+            )}
             <form className="space-y-6" onSubmit={handleSubmit}>
                 <div>
                 <label htmlFor="name" className="block text-sm font-medium text-stone-700 dark:text-stone-300">

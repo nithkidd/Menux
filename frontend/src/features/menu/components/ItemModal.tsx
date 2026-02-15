@@ -1,4 +1,4 @@
-import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
+import { useState, useEffect, useCallback, type ChangeEvent, type FormEvent } from 'react';
 import { X, Check, Ban } from 'lucide-react';
 import { menuService, type Item, type Category } from '../services/menu.service';
 import { FoodTypeManager } from './FoodTypeManager';
@@ -42,6 +42,15 @@ export default function ItemModal({
   const [selectedFoodTypeIds, setSelectedFoodTypeIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
 
+  const loadItemTags = useCallback(async (itemId: string) => {
+      try {
+          const tags = await foodTypeService.getItemTags(itemId);
+          setSelectedFoodTypeIds(tags);
+      } catch (error) {
+          console.error("Failed to load item tags", error);
+      }
+  }, []);
+
   // Reset form when modal opens or initialData/initialCategoryId changes
   useEffect(() => {
     if (isOpen) {
@@ -62,16 +71,7 @@ export default function ItemModal({
         setSelectedFoodTypeIds([]);
       }
     }
-  }, [isOpen, initialData, initialCategoryId, categories]);
-
-  const loadItemTags = async (itemId: string) => {
-      try {
-          const tags = await foodTypeService.getItemTags(itemId);
-          setSelectedFoodTypeIds(tags);
-      } catch (error) {
-          console.error("Failed to load item tags", error);
-      }
-  };
+  }, [isOpen, initialData, initialCategoryId, categories, loadItemTags]);
 
   if (!isOpen) return null;
 

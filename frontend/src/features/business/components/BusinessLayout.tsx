@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Outlet, NavLink, Link, useParams } from 'react-router-dom';
 import { businessService, type Business } from '../../business/services/business.service';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
@@ -8,13 +8,7 @@ export default function BusinessLayout() {
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (businessId) {
-      loadBusiness();
-    }
-  }, [businessId]);
-
-  const loadBusiness = async () => {
+  const loadBusiness = useCallback(async () => {
     try {
       setLoading(true);
       const data = await businessService.getById(businessId!);
@@ -24,7 +18,13 @@ export default function BusinessLayout() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [businessId]);
+
+  useEffect(() => {
+    if (businessId) {
+      loadBusiness();
+    }
+  }, [businessId, loadBusiness]);
 
   if (loading) {
     return (

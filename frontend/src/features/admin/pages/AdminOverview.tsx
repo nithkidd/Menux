@@ -62,7 +62,7 @@ export default function AdminOverview() {
           icon={Activity}
           color="text-emerald-600"
           bgClass="bg-emerald-50 dark:bg-emerald-900/20"
-          subValue={Math.round((stats.activeBusinesses / stats.totalBusinesses) * 100) + '%'}
+          subValue={stats.totalBusinesses > 0 ? Math.round((stats.activeBusinesses / stats.totalBusinesses) * 100) + '%' : '0%'}
           subLabel="Activation Rate"
         />
         <StatsCard

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { businessService, type Business } from '../services/business.service';
-import { Loader2, Globe, Facebook, Instagram, Twitter, MapPin, Phone, Mail, DollarSign, Palette, Layout, Check, X } from 'lucide-react';
+import { Loader2, Globe, Facebook, Instagram, Twitter, MapPin, Phone, Mail, DollarSign, Palette, Layout, Check, X, AlertCircle } from 'lucide-react';
 import { ImageUpload } from '../../../shared/components/ImageUpload';
 import { menuService } from '../../menu/services/menu.service';
+import { useToast } from '../../../shared/contexts/ToastContext';
 
 export default function BusinessSettings() {
   const { businessId } = useParams<{ businessId: string }>();
@@ -15,15 +16,24 @@ export default function BusinessSettings() {
 
   // Form State
   const [formData, setFormData] = useState<Partial<Business>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const { showToast } = useToast();
   
   // Check for changes (simple deep compare)
   const hasChanges = JSON.stringify(business) !== JSON.stringify(formData);
 
   useEffect(() => {
-    if (businessId) loadBusiness();
-  }, [businessId]);
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasChanges]);
 
-  const loadBusiness = async () => {
+  const loadBusiness = useCallback(async () => {
     try {
       setLoading(true);
       const data = await businessService.getById(businessId!);
@@ -34,7 +44,11 @@ export default function BusinessSettings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [businessId]);
+
+  useEffect(() => {
+    if (businessId) loadBusiness();
+  }, [businessId, loadBusiness]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -51,9 +65,33 @@ export default function BusinessSettings() {
     }));
   };
 
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.name?.trim()) newErrors.name = "Business name is required";
+    if (formData.name && formData.name.length < 3) newErrors.name = "Name must be at least 3 characters";
+    
+    if (!formData.slug?.trim()) {
+        newErrors.slug = "URL slug is required";
+    } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
+        newErrors.slug = "Slug can only contain lowercase letters, numbers, and hyphens";
+    }
+
+    if (formData.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_email)) {
+        newErrors.contact_email = "Invalid email format";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessId) return;
+
+    if (!validate()) {
+        showToast("Please fix the errors before saving", "error");
+        return;
+    }
 
     try {
       setSaveStatus('saving');
@@ -69,12 +107,15 @@ export default function BusinessSettings() {
       setBusiness(updated);
       setFormData(updated);
       setSaveStatus('success');
+      showToast("Settings saved successfully");
       
       // Reset after success
       setTimeout(() => setSaveStatus('idle'), 2000);
-    } catch (error: any) {
+    } catch (error) {
         console.error("Failed to save settings", error);
         setSaveStatus('error');
+        const message = error instanceof Error ? error.message : "Failed to save settings";
+        showToast(message, "error");
         // Reset after error
         setTimeout(() => setSaveStatus('idle'), 2000);
     }
@@ -140,6 +181,23 @@ export default function BusinessSettings() {
                             <div className="p-4 bg-stone-50 dark:bg-stone-800/50 rounded-xl border border-stone-100 dark:border-stone-800">
                                 <label className="block text-sm font-bold text-stone-900 dark:text-white mb-2">Business URL & Visibility</label>
                                 
+                                <div className="mb-4">
+                                    <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">Business Name</label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={formData.name || ''}
+                                        onChange={handleChange}
+                                        className={`w-full px-4 py-2 rounded-xl border ${errors.name ? 'border-red-500 focus:ring-red-500' : 'border-stone-200 dark:border-stone-700'} dark:bg-stone-950 dark:text-white focus:ring-orange-500 focus:border-orange-500`}
+                                        placeholder="Enter business name"
+                                    />
+                                    {errors.name && (
+                                        <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                                            <AlertCircle size={12} /> {errors.name}
+                                        </p>
+                                    )}
+                                </div>
+
                                 {/* Slug Input */}
                                 <div className="mb-4">
                                     <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">URL Slug</label>
@@ -150,13 +208,17 @@ export default function BusinessSettings() {
                                             name="slug"
                                             value={formData.slug || ''}
                                             onChange={(e) => {
-                                                // Simple client-side validation for display
                                                 const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
                                                 setFormData(prev => ({ ...prev, slug: val }));
                                             }}
-                                            className="flex-1 px-4 py-2 rounded-xl border-stone-200 dark:border-stone-700 dark:bg-stone-950 dark:text-white focus:ring-orange-500 focus:border-orange-500 font-mono text-sm"
+                                            className={`flex-1 px-4 py-2 rounded-xl border ${errors.slug ? 'border-red-500 focus:ring-red-500' : 'border-stone-200 dark:border-stone-700'} dark:bg-stone-950 dark:text-white focus:ring-orange-500 focus:border-orange-500 font-mono text-sm`}
                                         />
                                     </div>
+                                    {errors.slug && (
+                                        <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                                            <AlertCircle size={12} /> {errors.slug}
+                                        </p>
+                                    )}
                                     <p className="mt-1 text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1">
                                         <span className="font-bold">Warning:</span> Changing this will break existing QR codes and links.
                                     </p>
@@ -234,8 +296,13 @@ export default function BusinessSettings() {
                                         name="contact_email"
                                         value={formData.contact_email || ''}
                                         onChange={handleChange}
-                                        className="pl-9 w-full pr-4 py-2 rounded-xl border-stone-200 dark:border-stone-700 dark:bg-stone-950 dark:text-white focus:ring-orange-500 focus:border-orange-500"
+                                        className={`pl-9 w-full pr-4 py-2 rounded-xl border ${errors.contact_email ? 'border-red-500 focus:ring-red-500' : 'border-stone-200 dark:border-stone-700'} dark:bg-stone-950 dark:text-white focus:ring-orange-500 focus:border-orange-500`}
                                     />
+                                    {errors.contact_email && (
+                                        <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                                            <AlertCircle size={12} /> {errors.contact_email}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                              <div>
@@ -342,8 +409,7 @@ export default function BusinessSettings() {
                     <div className="space-y-6 animate-fade-in-up">
                         <div className="grid grid-cols-1 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Logo URL</label>
-                                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Logo URL</label>
+                                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">Logo</label>
                                     <div className="w-32">
                                     <ImageUpload
                                         initialUrl={formData.logo_url}

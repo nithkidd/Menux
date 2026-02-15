@@ -1,14 +1,26 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { businessService, type Business } from '../services/business.service';
 import { Link } from 'react-router-dom';
-import { Settings, Plus, Store, TrendingUp } from 'lucide-react';
+import { Settings, Plus, Store, TrendingUp, PowerOff, Eye, EyeOff, Trash2, ExternalLink, Search } from 'lucide-react';
 import PageTransition from '../../../shared/components/PageTransition';
+import ConfirmDialog from '../../../shared/components/ConfirmDialog';
+import { useToast } from '../../../shared/contexts/ToastContext';
 
 export default function Dashboard() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; business: Business | null }>({ isOpen: false, business: null });
+  const [deleting, setDeleting] = useState(false);
+  const { showToast } = useToast();
+
+  const filteredBusinesses = useMemo(() => {
+    return businesses.filter(biz => 
+      biz.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [businesses, searchTerm]);
 
   useEffect(() => {
     loadBusinesses();
@@ -19,10 +31,32 @@ export default function Dashboard() {
       setLoading(true);
       const data = await businessService.getAll({ scope: 'own' });
       setBusinesses(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load businesses');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load businesses';
+      setError(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (business: Business) => {
+    setDeleteDialog({ isOpen: true, business });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteDialog.business) return;
+    
+    setDeleting(true);
+    try {
+      await businessService.delete(deleteDialog.business.id);
+      setBusinesses(prev => prev.filter(b => b.id !== deleteDialog.business!.id));
+      showToast(`"${deleteDialog.business.name}" deleted successfully`);
+      setDeleteDialog({ isOpen: false, business: null });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete business';
+      showToast(message, 'error');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -55,6 +89,30 @@ export default function Dashboard() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            
+            {/* Search Bar */}
+            {!loading && businesses.length > 0 && (
+                <div className="mb-8">
+                    <div className="relative max-w-md">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search businesses by name..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-900 dark:text-white placeholder-stone-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                        />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
             
             {/* Content Area */}
             {loading ? (
@@ -98,16 +156,26 @@ export default function Dashboard() {
                     <div className="mt-8">
                         <Link
                             to="/dashboard/create-business"
-                            className="inline-flex items-center gap-2 rounded-2xl bg-orange-600 px-6 py-3 text-sm font-bold text-white hover:bg-orange-700 transition-all btn-press"
+                            className="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-6 py-3 text-sm font-bold text-white hover:bg-orange-700 hover:-translate-y-0.5 transition-all outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 btn-press"
                         >
                             <Plus size={18} />
-                            Create Business
+                            Create Your First Business
                         </Link>
                     </div>
                 </div>
+            ) : filteredBusinesses.length === 0 ? (
+                <div className="text-center py-20 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800">
+                    <p className="text-stone-500 dark:text-stone-400">No businesses found matching "<strong>{searchTerm}</strong>"</p>
+                    <button 
+                        onClick={() => setSearchTerm('')}
+                        className="mt-4 text-orange-600 font-bold hover:underline"
+                    >
+                        Clear search
+                    </button>
+                </div>
             ) : (
                 <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                    {businesses.map((biz, index) => (
+                    {filteredBusinesses.map((biz, index) => (
                     <div 
                         key={biz.id} 
                         className="group relative flex flex-col justify-between rounded-3xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 shadow-sm hover:shadow-xl hover:border-orange-200 dark:hover:border-orange-900 hover:-translate-y-1 transition-all duration-300 overflow-hidden"
@@ -148,33 +216,73 @@ export default function Dashboard() {
                                 </p>
                             </div>
 
-                            {/* Mini Stats (Placeholder) */}
+                            {/* Mini Stats */}
                             <div className="flex items-center gap-4 py-4 border-t border-stone-100 dark:border-stone-800">
                                 <div className="flex items-center gap-1.5 text-xs font-medium text-stone-500 dark:text-stone-400">
-                                    <TrendingUp size={14} className="text-emerald-500" />
-                                    <span>Active</span>
+                                    {biz.is_active ? (
+                                        <>
+                                            <TrendingUp size={14} className="text-emerald-500" />
+                                            <span>Active</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <PowerOff size={14} className="text-stone-400" />
+                                            <span>Inactive</span>
+                                        </>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-1.5 text-xs font-medium text-stone-500 dark:text-stone-400">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-stone-300 dark:bg-stone-600" />
-                                    <span>Public</span>
+                                    {biz.is_published ? (
+                                        <>
+                                            <Eye size={14} className="text-blue-500" />
+                                            <span>Published</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <EyeOff size={14} className="text-amber-500" />
+                                            <span>Draft</span>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
                         {/* Card Footer */}
                         <div className="px-6 py-4 bg-stone-50 dark:bg-stone-950/50 border-t border-stone-100 dark:border-stone-800 flex justify-between items-center relative z-10">
-                            <Link 
-                                to={`/dashboard/business/${biz.id}/menu`}
-                                className="text-sm font-bold text-stone-600 hover:text-orange-600 dark:text-stone-400 dark:hover:text-orange-400 transition-colors flex items-center gap-1"
-                            >
-                                Edit Menu
-                            </Link>
-                            <Link 
-                                to={`/dashboard/business/${biz.id}/settings`}
-                                className="p-2 rounded-lg text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-white transition-colors"
-                            >
-                                <Settings size={18} />
-                            </Link>
+                            <div className="flex items-center gap-3">
+                                <Link 
+                                    to={`/dashboard/business/${biz.id}/menu`}
+                                    className="text-sm font-bold text-stone-600 hover:text-orange-600 dark:text-stone-400 dark:hover:text-orange-400 transition-colors flex items-center gap-1"
+                                >
+                                    Edit Menu
+                                </Link>
+                                <a 
+                                    href={`/menu/${biz.slug}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm font-medium text-stone-500 hover:text-blue-600 dark:text-stone-500 dark:hover:text-blue-400 transition-colors flex items-center gap-1"
+                                    title="Preview Public Menu"
+                                >
+                                    <ExternalLink size={14} />
+                                    Preview
+                                </a>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Link 
+                                    to={`/dashboard/business/${biz.id}/settings`}
+                                    className="p-2 rounded-lg text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-white transition-colors btn-press"
+                                    title="Settings"
+                                >
+                                    <Settings size={18} />
+                                </Link>
+                                <button
+                                    onClick={() => handleDeleteClick(biz)}
+                                    className="p-2 rounded-lg text-stone-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors btn-press"
+                                    title="Delete Business"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                     ))}
@@ -182,6 +290,27 @@ export default function Dashboard() {
             )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        title="Delete Business?"
+        message={
+          deleteDialog.business ? (
+            <>
+              Are you sure you want to delete <strong>"{deleteDialog.business.name}"</strong>? 
+              This will permanently delete all associated categories, items, and data. 
+              This action cannot be undone.
+            </>
+          ) : ''
+        }
+        confirmLabel="Delete Business"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={deleting}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteDialog({ isOpen: false, business: null })}
+      />
     </PageTransition>
   );
 }

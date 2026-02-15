@@ -2,12 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import * as adminService from '../services/admin.service';
 import type { AdminBusiness } from '../services/admin.service';
 import { Search, Loader2, Store, Trash2, Power, PowerOff, ExternalLink } from 'lucide-react';
+import ConfirmDialog from '../../../shared/components/ConfirmDialog';
+import { useToast } from '../../../shared/contexts/ToastContext';
 
 
 export default function AdminBusinesses() {
   const [businesses, setBusinesses] = useState<AdminBusiness[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; business: AdminBusiness | null }>({ isOpen: false, business: null });
+  const [deleting, setDeleting] = useState(false);
+  const { showToast } = useToast();
 
   const load = useCallback(() => {
     setLoading(true);
@@ -30,20 +35,31 @@ export default function AdminBusinesses() {
           b.id === id ? { ...b, is_active: !currentActive } : b,
         ),
       );
-    } catch (err) {
+      showToast(currentActive ? 'Business deactivated' : 'Business activated');
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to toggle business status");
+      showToast(err.message || 'Failed to toggle business status', 'error');
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete business "${name}"? This cannot be undone.`)) return;
+  const handleDeleteClick = (business: AdminBusiness) => {
+    setDeleteDialog({ isOpen: true, business });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteDialog.business) return;
+    
+    setDeleting(true);
     try {
-      await adminService.deleteBusiness(id);
-      setBusinesses((prev) => prev.filter((b) => b.id !== id));
-    } catch (err) {
+      await adminService.deleteBusiness(deleteDialog.business.id);
+      setBusinesses((prev) => prev.filter((b) => b.id !== deleteDialog.business!.id));
+      showToast(`"${deleteDialog.business.name}" deleted successfully`);
+      setDeleteDialog({ isOpen: false, business: null });
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to delete business");
+      showToast(err.message || 'Failed to delete business', 'error');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -139,7 +155,7 @@ export default function AdminBusinesses() {
                           {biz.is_active ? <Power size={18} /> : <PowerOff size={18} />}
                         </button>
                         <button
-                          onClick={() => handleDelete(biz.id, biz.name)}
+                          onClick={() => handleDeleteClick(biz)}
                           className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                           title="Delete Business"
                         >
@@ -162,6 +178,27 @@ export default function AdminBusinesses() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        title="Delete Business?"
+        message={
+          deleteDialog.business ? (
+            <>
+              Are you sure you want to delete <strong>"{deleteDialog.business.name}"</strong>? 
+              This will permanently delete all associated categories, items, and data. 
+              This action cannot be undone.
+            </>
+          ) : ''
+        }
+        confirmLabel="Delete Business"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={deleting}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteDialog({ isOpen: false, business: null })}
+      />
     </div>
   );
 }

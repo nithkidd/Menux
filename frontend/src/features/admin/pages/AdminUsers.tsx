@@ -3,6 +3,7 @@ import * as adminService from '../services/admin.service';
 import type { AdminUser } from '../services/admin.service';
 import api from '../../../shared/utils/api';
 import { Search, Loader2, Trash2, Mail, User, ShieldAlert, X } from 'lucide-react';
+import { useToast } from '../../../shared/contexts/ToastContext';
 
 // Using a simplified modal component here or reusing existing one if better.
 // For now, inline modal for simplicity as per original file but styled better.
@@ -11,6 +12,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const { showToast } = useToast();
   
   // Invite State
   const [inviteEmail, setInviteEmail] = useState("");
@@ -41,9 +43,10 @@ export default function AdminUsers() {
       setUsers((prev) =>
         prev.map((u) => (u.id === id ? { ...u, role: newRole as AdminUser['role'] } : u)),
       );
+      showToast('User role updated successfully');
     } catch (err: any) {
       console.error(err);
-      alert(err.message || "Failed to update role");
+      showToast(err.message || 'Failed to update role', 'error');
     }
   };
 
@@ -53,10 +56,11 @@ export default function AdminUsers() {
       await adminService.deleteUser(id);
       setUsers((prev) => prev.filter((u) => u.id !== id));
       setUserToDelete(null);
+      showToast('User deleted successfully');
     } catch (err: any) {
       console.error(err);
-      const msg = err.response?.data?.error || err.message || "Failed to delete user";
-      alert(`Error: ${msg}`);
+      const msg = err.response?.data?.error || err.message || 'Failed to delete user';
+      showToast(`Error: ${msg}`, 'error');
     } finally {
       setIsDeleting(false);
     }
@@ -76,13 +80,13 @@ export default function AdminUsers() {
       load(); 
       
       if (result.tempPassword) {
-         alert(`User created!\nEmail: ${result.email}\nTemp Password: ${result.tempPassword}\n\nPlease share this password with the user.`);
+         showToast(`User created! Email: ${result.email} • Temp Password: ${result.tempPassword}. Please share this with the user.`);
       } else {
-         alert("Invitation sent successfully.");
+         showToast('Invitation sent successfully');
       }
     } catch (err: any) {
-      const msg = err.response?.data?.error || err.message || "Failed to invite user";
-      alert(`Error: ${msg}`);
+      const msg = err.response?.data?.error || err.message || 'Failed to invite user';
+      showToast(`Error: ${msg}`, 'error');
     } finally {
       setInviting(false);
     }

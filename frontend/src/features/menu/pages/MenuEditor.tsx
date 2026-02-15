@@ -1,9 +1,10 @@
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { menuService, type Category, type Item } from '../services/menu.service';
 import { foodTypeService } from '../services/food-type.service';
-import { Plus } from 'lucide-react'; 
+import { 
+  Plus
+} from 'lucide-react';
 import PageTransition from '../../../shared/components/PageTransition'; 
 import ItemModal from '../components/ItemModal';
 import CategoryModal from '../components/CategoryModal';
@@ -28,7 +29,6 @@ import { SortableItem } from '../components/SortableItem';
 
 export default function MenuEditor() {
   const { businessId } = useParams<{ businessId: string }>();
-  // const [business, setBusiness] = useState<Business | null>(null); // Removed unused business state
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -55,14 +55,7 @@ export default function MenuEditor() {
     })
   );
 
-  useEffect(() => {
-    if (businessId) {
-      loadMenu();
-      // loadBusiness(); // Removed
-    }
-  }, [businessId]);
-
-  const loadMenu = async () => {
+  const loadMenu = useCallback(async () => {
     if (!businessId) return;
     try {
       setLoading(true);
@@ -80,7 +73,13 @@ export default function MenuEditor() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [businessId]);
+
+  useEffect(() => {
+    if (businessId) {
+      loadMenu();
+    }
+  }, [businessId, loadMenu]);
 
   const showNotification = (message: string, type: NotificationType = 'success') => {
     const id = Date.now() + Math.random();
@@ -310,6 +309,8 @@ export default function MenuEditor() {
             ))}
           </div>
         )}
+        
+
 
         {/* Main Editor Layout */}
         <DndContext

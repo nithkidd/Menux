@@ -11,7 +11,6 @@ export default function Navbar() {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [avatarVersion, setAvatarVersion] = useState(0);
 
   const getAvatarUrl = (url: string) => {
     if (!url.includes("/upload/")) return url;
@@ -27,21 +26,22 @@ export default function Navbar() {
         setIsDropdownOpen(false);
       }
     }
+
+    function handleEsc(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsDropdownOpen(false);
+      }
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEsc);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEsc);
     };
   }, []);
 
-  useEffect(() => {
-    if (user?.avatar_url) {
-      setAvatarVersion(Date.now());
-    }
-  }, [user?.avatar_url]);
-
-  const avatarSrc = user?.avatar_url
-    ? `${getAvatarUrl(user.avatar_url)}${user.avatar_url.includes("?") ? "&" : "?"}v=${avatarVersion}`
-    : null;
+  const avatarSrc = user?.avatar_url ? getAvatarUrl(user.avatar_url) : null;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-stone-900/70 backdrop-blur-md border-b border-stone-200 dark:border-stone-800">
@@ -141,6 +141,18 @@ export default function Navbar() {
                     >
                       Settings
                     </Link>
+                    {user.role === "admin" && (
+                      <Link
+                        to="/admin"
+                        className="block w-full text-left px-4 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors border-t border-stone-100 dark:border-stone-800"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <span className="flex items-center gap-2">
+                          <ShieldCheck size={14} className="text-orange-600" />
+                          Admin Panel
+                        </span>
+                      </Link>
+                    )}
                     <button
                       onClick={() => {
                         signOut();

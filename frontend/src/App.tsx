@@ -2,6 +2,7 @@ import React, { Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./features/auth/auth.context";
 import { ThemeProvider } from "./shared/contexts/ThemeContext";
+import { ToastProvider } from "./shared/contexts/ToastContext";
 import { usePermissions } from "./shared/hooks/usePermissions";
 import AdminDashboard from "./features/admin/pages/AdminDashboard";
 import Login from "./features/auth/pages/Login";
@@ -59,44 +60,8 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Simple Error Boundary
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean; error: Error | null }
-> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Uncaught error:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="p-8 text-center">
-          <h2 className="text-xl font-bold text-red-600">
-            Something went wrong.
-          </h2>
-          <p className="mt-2 text-gray-600">Please refresh the page.</p>
-          <pre className="mt-4 p-4 bg-gray-100 rounded text-left overflow-auto text-sm">
-            {this.state.error?.toString()}
-          </pre>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
 import MainLayout from "./shared/components/MainLayout";
+import ErrorBoundary from "./shared/components/ErrorBoundary";
 
 const LandingPage = React.lazy(() => import("./features/landing/pages/LandingPage"));
 
@@ -202,7 +167,9 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-          <AppRoutes />
+          <ToastProvider>
+            <AppRoutes />
+          </ToastProvider>
         </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
